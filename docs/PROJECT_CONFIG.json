@@ -1,0 +1,89 @@
+{
+  "college": {
+    "name": "V.S.B ENGINEERING COLLEGE",
+    "shortName": "VSB",
+    "department": "AI & DS",
+    "logoPath": "/src/assets/college-logo.jpg",
+    "location": "Karur, Tamil Nadu, India"
+  },
+  "project": {
+    "title": "BUS STUDENTS TRACKER",
+    "subtitle": "TRACKER",
+    "openingText": "Welcome to VSB BST",
+    "phase": "PHASE 2",
+    "phaseTitle": "Authentication, Login & Role-Based Access Control"
+  },
+  "branding": {
+    "theme": "AI Transport Command Center",
+    "mode": "Pure Dark Monochrome (Zero Blue/Cyan)",
+    "colors": {
+      "bgVoid": "#080808",
+      "bgPrimary": "#0d0d0d",
+      "bgSurface": "#181818",
+      "bgElevated": "#222222",
+      "borderDefault": "#333333",
+      "borderSubtle": "#222222",
+      "borderActive": "#ffffff",
+      "textPure": "#ffffff",
+      "textPrimary": "#f0f0f0",
+      "textSecondary": "#d1d1d1",
+      "textMuted": "#888888"
+    },
+    "typography": {
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      "monoFamily": "'JetBrains Mono', 'Fira Code', Consolas, monospace"
+    }
+  },
+  "technology": {
+    "frontend": "React (Vite) + Vanilla CSS Custom Properties",
+    "icons": "Lucide React",
+    "backendTarget": "Node.js / Express (Phase 3 API Service)",
+    "databaseTarget": "PostgreSQL with PostGIS extensions",
+    "authTarget": "JWT Role Claims with Secure Session Tokens",
+    "deploymentTarget": "Docker Containerized"
+  },
+  "authentication": {
+    "identifier": "Email (e.g. user@vsb.ac.in)",
+    "method": "Email & Password",
+    "registration": "Enabled for Students & Staff with College Domain",
+    "sessionDurationMinutes": 60,
+    "tokenPrefix": "BST-AUTH-SESSION"
+  },
+  "roles": [
+    {
+      "id": "ADMIN",
+      "label": "Administrator",
+      "clearance": "Tier 1 - Full Operational Authority",
+      "scope": "System configuration, user management, route assignment, full fleet telemetry",
+      "route": "/admin"
+    },
+    {
+      "id": "TRANSPORT_STAFF",
+      "label": "Transport Staff",
+      "clearance": "Tier 2 - Fleet Monitoring",
+      "scope": "Live bus fleet tracking, student boarding anomalies, dispatch coordination",
+      "route": "/transport-staff"
+    },
+    {
+      "id": "BUS_IN_CHARGE",
+      "label": "Bus In-Charge",
+      "clearance": "Tier 3 - Assigned Vehicle Supervisor",
+      "scope": "Assigned bus cabin verification, student count, manual attendance dispute resolution",
+      "route": "/bus-in-charge"
+    },
+    {
+      "id": "DRIVER",
+      "label": "Driver",
+      "clearance": "Tier 4 - Vehicle Operator",
+      "scope": "Assigned route navigation view, trip start/stop telemetry, stop schedule",
+      "route": "/driver"
+    },
+    {
+      "id": "STUDENT",
+      "label": "Student",
+      "clearance": "Tier 5 - Commuter",
+      "scope": "Personal bus assignment, live arrival forecast, designated boarding/drop alerts",
+      "route": "/student"
+    }
+  ]
+}

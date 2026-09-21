@@ -1,0 +1,306 @@
+// FILE: src/App.jsx
+// PURPOSE: Root application component coordinating AuthProvider, routing between Phase 1 core views and Phase 2 role-protected views, and navigation testbeds.
+// PHASE: Phase 2 — Authentication, Login & Role-Based Access Control
+// USED BY: src/main.jsx
+
+import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import CommandCenterHeader from './components/CommandCenterHeader';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Core System Views
+import OpeningPage from './pages/OpeningPage';
+import LoadingPage from './pages/LoadingPage';
+import Error401Page from './pages/Error401Page';
+import Error403Page from './pages/Error403Page';
+import Error404Page from './pages/Error404Page';
+import Error500Page from './pages/Error500Page';
+import Error503Page from './pages/Error503Page';
+import NetworkErrorDemoPage from './pages/NetworkErrorDemoPage';
+import CameraStateDemoPage from './pages/CameraStateDemoPage';
+
+// Authentication & Protected Role Views
+import LoginPage from './pages/LoginPage';
+import RoleLandingPage from './pages/protected/RoleLandingPage';
+import TransportMasterPage from './pages/admin/TransportMasterPage';
+import StudentManagementPage from './pages/admin/StudentManagementPage';
+import StaffManagementPage from './pages/admin/StaffManagementPage';
+import CameraManagementPage from './pages/admin/CameraManagementPage';
+import DriverVerificationDashboard from './pages/admin/DriverVerificationDashboard';
+import BiometricEnrollmentPage from './pages/admin/BiometricEnrollmentPage';
+import BoardingVerificationDashboard from './pages/admin/BoardingVerificationDashboard';
+
+function AppContent() {
+  const [currentPage, setCurrentPage] = useState('opening');
+  const { user } = useAuth();
+
+  // Hash-based direct view access for testing (e.g. #404, #network-demo, #camera-demo)
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace('#', '').trim();
+      if (hash) {
+        setCurrentPage(hash);
+      }
+    };
+
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
+
+  const navigateToRole = (role) => {
+    switch (role) {
+      case 'ADMIN':
+        setCurrentPage('admin');
+        break;
+      case 'TRANSPORT_STAFF':
+        setCurrentPage('transport-staff');
+        break;
+      case 'BUS_IN_CHARGE':
+        setCurrentPage('bus-in-charge');
+        break;
+      case 'DRIVER':
+        setCurrentPage('driver');
+        break;
+      case 'STUDENT':
+      default:
+        setCurrentPage('student');
+        break;
+    }
+  };
+
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      // Core Entry & Diagnostic
+      case 'opening':
+        return <OpeningPage onProceed={() => setCurrentPage('loading')} onEnter={() => setCurrentPage('loading')} />;
+      case 'loading':
+        return (
+          <LoadingPage 
+            onComplete={() => {
+              if (user) {
+                navigateToRole(user.role);
+              } else {
+                setCurrentPage('login');
+              }
+            }} 
+          />
+        );
+
+      // System Diagnostics & Subsystem Views
+      case 'camera-demo':
+        return <CameraStateDemoPage />;
+      case 'network-demo':
+        return <NetworkErrorDemoPage />;
+
+      // HTTP & Authorization Error Pages
+      case '401':
+        return <Error401Page onNavigate={setCurrentPage} />;
+      case '403':
+        return <Error403Page onNavigate={setCurrentPage} currentRole={user?.role || 'UNAUTHENTICATED'} />;
+      case '404':
+        return <Error404Page onNavigate={setCurrentPage} />;
+      case '500':
+        return <Error500Page onNavigate={setCurrentPage} />;
+      case '503':
+        return <Error503Page onNavigate={setCurrentPage} />;
+
+      // Authentication
+      case 'login':
+        return (
+          <LoginPage 
+            onLoginSuccess={(authedUser) => {
+              navigateToRole(authedUser.role);
+            }} 
+          />
+        );
+
+      // Institutional Role-Protected Portals
+      case 'transport-master':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <TransportMasterPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'student-management':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <StudentManagementPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'staff-management':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <StaffManagementPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'camera-management':
+      case 'admin/cameras':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <CameraManagementPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'driver-verification':
+      case 'admin/driver-verification':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <DriverVerificationDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'biometric-enrollment':
+      case 'admin/biometric-enrollment':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <BiometricEnrollmentPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'boarding':
+      case 'boarding-verification':
+      case 'admin/boarding':
+      case 'admin/boarding-verification':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <BoardingVerificationDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'admin':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <RoleLandingPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'transport-staff':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['TRANSPORT_STAFF']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <RoleLandingPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'bus-in-charge':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['BUS_IN_CHARGE']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <RoleLandingPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'driver':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['DRIVER']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <RoleLandingPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'student':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['STUDENT']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <RoleLandingPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      default:
+        return <OpeningPage onProceed={() => setCurrentPage('loading')} onEnter={() => setCurrentPage('loading')} />;
+    }
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-void)' }}>
+      {/* Top Institutional Header */}
+      <CommandCenterHeader onNavigate={setCurrentPage} />
+
+      {/* Main Page Content Area */}
+      <main style={{ flex: 1, position: 'relative' }}>
+        {renderCurrentPage()}
+      </main>
+
+      {/* Persistent Institutional Footer */}
+      <footer
+        style={{
+          background: 'var(--bg-primary)',
+          borderTop: '1px solid var(--border-subtle)',
+          padding: '14px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)'
+        }}
+      >
+        <div>
+          <strong style={{ color: 'var(--text-primary)' }}>V.S.B. ENGINEERING COLLEGE</strong> • Department of AI & DS
+        </div>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <span>Institutional Transport Telemetry Architecture</span>
+          <span style={{ color: 'var(--border-default)' }}>|</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }}>BUILD: 2026.1.0-ENTERPRISE</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
