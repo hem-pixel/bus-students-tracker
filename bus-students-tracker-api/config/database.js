@@ -1849,7 +1849,31 @@ function initFallbackStore() {
         timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
         created_at: new Date(Date.now() - 3600000 * 3).toISOString()
       }
-    ]
+    ],
+    boarding_verification_events: [
+      {
+        id: 'bve-10000000-0000-0000-0000-000000000001',
+        event_id: 'bve-10000000-0000-0000-0000-000000000001',
+        student_id: 'st100000-0000-0000-0000-000000000001',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        stop_id: 's1000000-0000-0000-0000-000000000002',
+        confidence_score: 0.94,
+        verification_status: 'WRONG_STOP',
+        assigned_bus_id: 'b1000000-0000-0000-0000-000000000001',
+        assigned_stop_id: 's1000000-0000-0000-0000-000000000001',
+        photo_path: '/snapshots/bve_001.jpg',
+        biometric_verified: false,
+        override_status: 'PENDING',
+        override_reason: null,
+        overridden_at: null,
+        in_charge_id: null,
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+        updated_at: new Date(Date.now() - 3600000).toISOString()
+      }
+    ],
+    alerts: [],
+    alert_notifications: [],
+    anomaly_escalations: []
   };
 
   return fallbackStore;
@@ -1874,6 +1898,12 @@ const db = {
   // Real pool instance (for transactions / direct pg usage)
   pool,
 
+  async end() {
+    try {
+      if (pool && pool.end) await pool.end();
+    } catch (_) {}
+  },
+
   // Universal query function
   async query(text, params = []) {
     if (isPgConnected) {
@@ -1889,6 +1919,62 @@ const db = {
 // Simple query parsing for all tables when running in fallback mode
 function executeFallbackQuery(store, sql, params = []) {
   const normalized = sql.trim().replace(/\s+/g, ' ');
+
+  // Multi-COUNT summary query for boarding attendance
+  if (/FROM\s+student_attendance_log/i.test(normalized) && /verified_boardings|completed_boardings/i.test(normalized)) {
+    let targetBus = params[0];
+    let atts = (store.student_attendance_log || []).filter(a => !targetBus || String(a.bus_id) === String(targetBus));
+    return {
+      rows: [{
+        total_boardings: String(atts.length),
+        verified_boardings: String(atts.filter(a => a.verified_by_biometric).length),
+        completed_boardings: String(atts.filter(a => a.boarding_status === 'Boarded').length),
+        absent_count: String(atts.filter(a => a.boarding_status === 'Absent').length)
+      }],
+      rowCount: 1
+    };
+  }
+
+  // 0a. Specific alert anomaly count query
+  if (/FROM\s+alerts/i.test(normalized) && /anomaly_count/i.test(normalized)) {
+    const targetStudentId = params[0];
+    const cutoff = Date.now() - 24 * 3600 * 1000;
+    const count = (store.alerts || []).filter(a => {
+      const sMatch = !targetStudentId || String(a.student_id) === String(targetStudentId);
+      const typeMatch = a.alert_type !== 'UNKNOWN_STUDENT';
+      const timeMatch = !a.created_at || new Date(a.created_at).getTime() >= cutoff;
+      return sMatch && typeMatch && timeMatch;
+    }).length;
+    return {
+      rows: [{ anomaly_count: String(count), count: String(count) }],
+      rowCount: 1
+    };
+  }
+
+  // 0b. Specific alert statistics aggregation query
+  if (/FROM\s+alerts/i.test(normalized) && /total_alerts/i.test(normalized)) {
+    const targetBus = params[0];
+    const intervalMatch = normalized.match(/INTERVAL\s+'(\d+)\s*hours?'/i);
+    const hours = intervalMatch ? parseInt(intervalMatch[1], 10) : 24;
+    const cutoff = Date.now() - hours * 3600 * 1000;
+    let alertList = (store.alerts || []).filter(a => {
+      const timeMatch = !a.created_at || new Date(a.created_at).getTime() >= cutoff;
+      const busMatch = !targetBus || String(a.bus_id) === String(targetBus) || String(a.assigned_bus_id) === String(targetBus);
+      return timeMatch && busMatch;
+    });
+    const studentIds = new Set(alertList.map(a => a.student_id).filter(Boolean));
+    return {
+      rows: [{
+        total_alerts: String(alertList.length),
+        active_alerts: String(alertList.filter(a => (a.alert_status || a.status) === 'ACTIVE').length),
+        critical_alerts: String(alertList.filter(a => a.severity === 'CRITICAL').length),
+        wrong_bus_count: String(alertList.filter(a => a.alert_type === 'WRONG_BUS').length),
+        wrong_stop_count: String(alertList.filter(a => a.alert_type === 'WRONG_STOP').length),
+        affected_students: String(studentIds.size)
+      }],
+      rowCount: 1
+    };
+  }
 
   // 0. COUNT queries (e.g., SELECT COUNT(*) as count FROM ...)
   if (/SELECT\s+COUNT\(\*\)/i.test(normalized)) {
@@ -1927,11 +2013,17 @@ function executeFallbackQuery(store, sql, params = []) {
         const route = (store.routes || []).find(r => r.route_id === s.route_id);
         return {
           ...s,
+          id: s.id || s.stop_id,
           route_name: route ? route.route_name : 'Karur Urban Trunk Line',
           route_code: route ? route.route_code : 'RT-KRR-01',
           route_type: route ? route.route_type : 'MORNING'
         };
       });
+    } else if (tableName === 'buses') {
+      rows = rows.map(b => ({
+        ...b,
+        id: b.id || b.bus_id
+      }));
     } else if (tableName === 'drivers') {
       rows = rows.map(d => {
         const bus = (store.buses || []).find(b => b.bus_id === d.assigned_bus_id);
@@ -1977,14 +2069,18 @@ function executeFallbackQuery(store, sql, params = []) {
       });
     } else if (tableName === 'students') {
       rows = rows.map(s => {
-        const assign = (store.student_bus_assignments || []).find(a => a.student_id === s.student_id && a.status === 'ACTIVE' && a.is_primary);
-        const bus = assign ? (store.buses || []).find(b => b.bus_id === assign.bus_id) : null;
-        const route = assign ? (store.routes || []).find(r => r.route_id === assign.route_id) : null;
-        const bStop = assign ? (store.stops || []).find(st => st.stop_id === assign.boarding_stop_id) : null;
+        const assign = (store.student_bus_assignments || []).find(a => (a.student_id === s.student_id || a.student_id === s.id) && (a.status === 'ACTIVE' || a.is_active) && (a.is_primary !== false));
+        const bus = assign ? (store.buses || []).find(b => b.bus_id === assign.bus_id || b.id === assign.bus_id) : null;
+        const route = assign ? (store.routes || []).find(r => r.route_id === assign.route_id || r.id === assign.route_id) : null;
+        const bStop = assign ? (store.stops || []).find(st => st.stop_id === assign.boarding_stop_id || st.stop_id === assign.stop_id || st.id === assign.stop_id) : null;
         const dStop = assign ? (store.stops || []).find(st => st.stop_id === assign.drop_stop_id) : null;
+        const fullName = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Student';
         return {
           ...s,
-          student_name: `${s.first_name} ${s.last_name}`,
+          id: s.id || s.student_id,
+          full_name: fullName,
+          register_number: s.register_number || s.roll_number || 'N/A',
+          student_name: fullName,
           bus_number: bus ? bus.bus_number : null,
           bus_id: assign ? assign.bus_id : null,
           route_name: route ? route.route_name : null,
@@ -1995,17 +2091,23 @@ function executeFallbackQuery(store, sql, params = []) {
       });
     } else if (tableName === 'student_bus_assignments') {
       rows = rows.map(a => {
-        const student = (store.students || []).find(st => st.student_id === a.student_id);
-        const bus = (store.buses || []).find(b => b.bus_id === a.bus_id);
-        const route = (store.routes || []).find(r => r.route_id === a.route_id);
-        const bStop = (store.stops || []).find(st => st.stop_id === a.boarding_stop_id);
+        const student = (store.students || []).find(st => st.student_id === a.student_id || st.id === a.student_id);
+        const bus = (store.buses || []).find(b => b.bus_id === a.bus_id || b.id === a.bus_id);
+        const route = (store.routes || []).find(r => r.route_id === a.route_id || r.id === a.route_id);
+        const bStop = (store.stops || []).find(st => st.stop_id === a.boarding_stop_id || st.stop_id === a.stop_id || st.id === a.stop_id);
         const dStop = (store.stops || []).find(st => st.stop_id === a.drop_stop_id);
+        const fullName = student ? (student.full_name || `${student.first_name || ''} ${student.last_name || ''}`.trim()) : 'Unknown Student';
         return {
           ...a,
-          roll_number: student ? student.roll_number : 'Unknown',
+          id: a.id || a.assignment_id,
+          stop_id: a.stop_id || a.boarding_stop_id,
+          is_active: a.is_active !== undefined ? a.is_active : (a.status === 'ACTIVE'),
+          roll_number: student ? (student.roll_number || student.register_number) : 'Unknown',
+          register_number: student ? (student.register_number || student.roll_number) : 'Unknown',
           first_name: student ? student.first_name : '',
           last_name: student ? student.last_name : '',
-          student_name: student ? `${student.first_name} ${student.last_name}` : 'Unknown Student',
+          full_name: fullName,
+          student_name: fullName,
           department: student ? student.department : '',
           semester: student ? student.semester : null,
           bus_number: bus ? bus.bus_number : 'BUS-14',
@@ -2014,6 +2116,45 @@ function executeFallbackQuery(store, sql, params = []) {
           route_code: route ? route.route_code : 'RT-KRR-01',
           boarding_stop_name: bStop ? bStop.stop_name : 'Default Boarding Stop',
           drop_stop_name: dStop ? dStop.stop_name : 'V.S.B. Engineering College Main Gate'
+        };
+      });
+    } else if (tableName === 'boarding_verification_events') {
+      rows = rows.map(bve => {
+        const st = (store.students || []).find(s => s.student_id === bve.student_id || s.id === bve.student_id);
+        const bus = (store.buses || []).find(b => b.bus_id === bve.bus_id || b.id === bve.bus_id);
+        const fullName = st ? (st.full_name || `${st.first_name || ''} ${st.last_name || ''}`.trim()) : 'Unknown Student';
+        return {
+          ...bve,
+          id: bve.id || bve.event_id,
+          full_name: fullName,
+          register_number: st ? (st.register_number || st.roll_number) : 'N/A',
+          bus_number: bus ? bus.bus_number : 'BUS-14'
+        };
+      });
+    } else if (tableName === 'alerts') {
+      rows = rows.map(al => {
+        const st = (store.students || []).find(s => String(s.student_id) === String(al.student_id) || String(s.id) === String(al.student_id));
+        const bus = (store.buses || []).find(b => String(b.bus_id) === String(al.bus_id) || String(b.id) === String(al.bus_id));
+        const assignedBus = (store.buses || []).find(b => String(b.bus_id) === String(al.assigned_bus_id) || String(b.id) === String(al.assigned_bus_id));
+        const fullName = st ? (st.full_name || `${st.first_name || ''} ${st.last_name || ''}`.trim()) : 'Unknown Student';
+        return {
+          ...al,
+          id: al.id || al.alert_id,
+          full_name: fullName,
+          register_number: st ? (st.register_number || st.roll_number) : 'N/A',
+          bus_number: bus ? bus.bus_number : (al.bus_id ? `BUS-${al.bus_id}` : 'BUS-14'),
+          assigned_bus_number: assignedBus ? assignedBus.bus_number : (al.assigned_bus_id ? `BUS-${al.assigned_bus_id}` : null)
+        };
+      });
+    } else if (tableName === 'anomaly_escalations') {
+      rows = rows.map(ae => {
+        const st = (store.students || []).find(s => String(s.student_id) === String(ae.student_id) || String(s.id) === String(ae.student_id));
+        const fullName = st ? (st.full_name || `${st.first_name || ''} ${st.last_name || ''}`.trim()) : 'Unknown Student';
+        return {
+          ...ae,
+          id: ae.id || ae.escalation_id,
+          full_name: fullName,
+          register_number: st ? (st.register_number || st.roll_number) : 'N/A'
         };
       });
     } else if (tableName === 'student_transport_requests') {
@@ -2250,21 +2391,60 @@ function executeFallbackQuery(store, sql, params = []) {
     const whereMatch = normalized.match(/WHERE\s+(.+?)(?:\s+ORDER\s+BY|\s+GROUP\s+BY|$)/i);
     if (whereMatch) {
       const whereClause = whereMatch[1];
+
+      // Check boolean literals (is_active = TRUE/FALSE)
+      if (/(?:[a-z_]+\.)?is_active\s*=\s*TRUE/i.test(whereClause)) {
+        rows = rows.filter(r => r.is_active === true || r.status === 'ACTIVE');
+      } else if (/(?:[a-z_]+\.)?is_active\s*=\s*FALSE/i.test(whereClause)) {
+        rows = rows.filter(r => r.is_active === false || r.status !== 'ACTIVE');
+      }
+
+      // Check not-equal matches (e.g., verification_status != 'VERIFIED' or <>)
+      const neqMatches = [...whereClause.matchAll(/(?:[a-z_]+\.)?([a-z_]+)(?:::text)?\s*(?:!=|<>)\s*'([^']+)'/gi)];
+      for (const m of neqMatches) {
+        const col = m[1];
+        const val = m[2];
+        rows = rows.filter(r => String(r[col]) !== String(val));
+      }
+
+      // Check interval matches (e.g., created_at > NOW() - INTERVAL '24 hours')
+      const intervalMatch = whereClause.match(/(?:[a-z_]+\.)?created_at\s*>\s*NOW\(\)\s*-\s*INTERVAL\s*'(\d+)\s*hours?'/i);
+      if (intervalMatch) {
+        const hours = parseInt(intervalMatch[1], 10);
+        const cutoff = Date.now() - hours * 3600 * 1000;
+        rows = rows.filter(r => !r.created_at || new Date(r.created_at).getTime() >= cutoff);
+      }
+
       if (/\s+OR\s+/i.test(whereClause)) {
         const orBranches = whereClause.split(/\s+OR\s+/i);
         const matchedRowSets = [];
         for (const branch of orBranches) {
           let bRows = [...rows];
-          const bParamMatches = [...branch.matchAll(/(?:[a-z_]+\.)?([a-z_]+)\s*=\s*\$(\d+)/gi)];
+          const bParamMatches = [...branch.matchAll(/(?:[a-z_]+\.)?([a-z_]+)(?:::text)?\s*=\s*\$(\d+)/gi)];
           for (const m of bParamMatches) {
             const col = m[1];
             const pIdx = parseInt(m[2], 10) - 1;
             const val = params[pIdx];
             if (val !== undefined && val !== null) {
-              bRows = bRows.filter(r => String(r[col]) === String(val));
+              if (col === 'id') {
+                bRows = bRows.filter(r => 
+                  String(r.id) === String(val) || 
+                  String(r[tableName + '_id']) === String(val) || 
+                  String(r.student_id) === String(val) || 
+                  String(r.event_id) === String(val) || 
+                  String(r.assignment_id) === String(val) ||
+                  String(r.bus_id) === String(val)
+                );
+              } else if (col === 'student_id') {
+                bRows = bRows.filter(r => String(r.student_id) === String(val) || String(r.id) === String(val));
+              } else if (col === 'bus_id') {
+                bRows = bRows.filter(r => String(r.bus_id) === String(val) || String(r.id) === String(val));
+              } else {
+                bRows = bRows.filter(r => String(r[col]) === String(val));
+              }
             }
           }
-          const bLiteralMatches = [...branch.matchAll(/(?:[a-z_]+\.)?([a-z_]+)\s*=\s*'([^']+)'/gi)];
+          const bLiteralMatches = [...branch.matchAll(/(?:[a-z_]+\.)?([a-z_]+)(?:::text)?\s*=\s*'([^']+)'/gi)];
           for (const m of bLiteralMatches) {
             const col = m[1];
             const val = m[2];
@@ -2274,25 +2454,40 @@ function executeFallbackQuery(store, sql, params = []) {
         }
         const seen = new Set();
         rows = matchedRowSets.filter(r => {
-          const key = r.student_id || r.enrollment_id || r.staff_id || r.driver_id || r.bus_id || r.id || JSON.stringify(r);
+          const key = r.student_id || r.enrollment_id || r.staff_id || r.driver_id || r.bus_id || r.event_id || r.id || JSON.stringify(r);
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
         });
       } else {
         // Check for parameter matches e.g. (?:[a-z_]+\.)?([a-z_]+)\s*=\s*\$(\d+)
-        const paramMatches = [...whereClause.matchAll(/(?:[a-z_]+\.)?([a-z_]+)\s*=\s*\$(\d+)/gi)];
+        const paramMatches = [...whereClause.matchAll(/(?:[a-z_]+\.)?([a-z_]+)(?:::text)?\s*=\s*\$(\d+)/gi)];
         for (const m of paramMatches) {
           const col = m[1];
           const pIdx = parseInt(m[2], 10) - 1;
           const val = params[pIdx];
           if (val !== undefined && val !== null) {
-            rows = rows.filter(r => String(r[col]) === String(val));
+            if (col === 'id') {
+              rows = rows.filter(r => 
+                String(r.id) === String(val) || 
+                String(r[tableName + '_id']) === String(val) || 
+                String(r.student_id) === String(val) || 
+                String(r.event_id) === String(val) || 
+                String(r.assignment_id) === String(val) ||
+                String(r.bus_id) === String(val)
+              );
+            } else if (col === 'student_id') {
+              rows = rows.filter(r => String(r.student_id) === String(val) || String(r.id) === String(val));
+            } else if (col === 'bus_id') {
+              rows = rows.filter(r => String(r.bus_id) === String(val) || String(r.id) === String(val));
+            } else {
+              rows = rows.filter(r => String(r[col]) === String(val));
+            }
           }
         }
 
         // Check for literal equality matches e.g. status = 'ACTIVE'
-        const literalMatches = [...whereClause.matchAll(/(?:[a-z_]+\.)?([a-z_]+)\s*=\s*'([^']+)'/gi)];
+        const literalMatches = [...whereClause.matchAll(/(?:[a-z_]+\.)?([a-z_]+)(?:::text)?\s*=\s*'([^']+)'/gi)];
         for (const m of literalMatches) {
           const col = m[1];
           const val = m[2];
@@ -2354,7 +2549,7 @@ function executeFallbackQuery(store, sql, params = []) {
   }
 
   // 2. INSERT queries
-  const insertMatch = normalized.match(/INSERT\s+INTO\s+([a-z_]+)\s*\((.+?)\)\s*VALUES\s*\((.+?)\)(?:\s*RETURNING\s+(.+))?$/i);
+  const insertMatch = normalized.match(/INSERT\s+INTO\s+([a-z_]+)\s*\((.+?)\)\s*VALUES\s*\((.+?)\)(?:\s*ON\s+CONFLICT.+?)?(?:\s*RETURNING\s+(.+))?$/i);
   if (insertMatch) {
     const [, tableName, colsStr] = insertMatch;
     const cols = colsStr.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
@@ -2373,6 +2568,7 @@ function executeFallbackQuery(store, sql, params = []) {
       student_bus_assignments: 'assignment_id',
       student_transport_requests: 'request_id',
       student_attendance_log: 'log_id',
+      boarding_verification_events: 'id',
       staff_roles: 'role_id',
       staff_members: 'staff_id',
       staff_shifts: 'shift_id',
@@ -2386,7 +2582,10 @@ function executeFallbackQuery(store, sql, params = []) {
       biometric_enrollments: 'enrollment_id',
       recognition_results: 'result_id',
       recognition_model_performance: 'perf_id',
-      recognition_audit_log: 'audit_id'
+      recognition_audit_log: 'audit_id',
+      alerts: 'id',
+      alert_notifications: 'id',
+      anomaly_escalations: 'id'
     };
     const idKey = idKeyMap[tableName] || 'id';
 
@@ -2394,7 +2593,22 @@ function executeFallbackQuery(store, sql, params = []) {
     cols.forEach((col, idx) => {
       newRecord[col] = params[idx];
     });
-    newRecord.id = newRecord[idKey] || newRecord.id;
+    newRecord.id = newRecord.id || newRecord[idKey] || crypto.randomUUID();
+    if (tableName === 'boarding_verification_events') {
+      newRecord.event_id = newRecord.event_id || newRecord.id;
+      newRecord.override_status = newRecord.override_status || 'PENDING';
+    }
+    if (tableName === 'anomaly_escalations') {
+      newRecord.status = newRecord.status || 'ACTIVE';
+    }
+    if (tableName === 'alerts') {
+      newRecord.alert_status = newRecord.alert_status || 'ACTIVE';
+      newRecord.status = newRecord.status || newRecord.alert_status;
+      newRecord.severity = newRecord.severity || 'MEDIUM';
+    }
+    if (tableName === 'alert_notifications') {
+      newRecord.status = newRecord.status || 'PENDING';
+    }
     if (tableName === 'cameras') {
       newRecord.hls_url = newRecord.hls_url || newRecord.hls_stream_url || newRecord.stream_url || 'https://stream.vsb.ac.in/hls/default/index.m3u8';
       newRecord.rtsp_url = newRecord.rtsp_url || 'rtsp://admin:vsb123@192.168.1.100:554/live/ch0';
@@ -2427,7 +2641,12 @@ function executeFallbackQuery(store, sql, params = []) {
     const [, tableName, setClause, idCol, idParamIndex] = updateMatch;
     const table = store[tableName] || [];
     const targetId = params[parseInt(idParamIndex, 10) - 1];
-    const index = table.findIndex(r => String(r[idCol]) === String(targetId));
+    const index = table.findIndex(r => 
+      String(r[idCol]) === String(targetId) || 
+      String(r.id) === String(targetId) || 
+      String(r.event_id) === String(targetId) || 
+      String(r[tableName + '_id']) === String(targetId)
+    );
 
     if (index === -1) {
       return { rows: [], rowCount: 0 };

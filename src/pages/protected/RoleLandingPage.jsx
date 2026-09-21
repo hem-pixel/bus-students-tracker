@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Shield, Key, LogOut, CheckCircle, Clock, User, Bus, Users, UserCheck, Camera, ShieldCheck, Fingerprint, ClipboardCheck } from 'lucide-react';
+import { Shield, Key, LogOut, CheckCircle, Clock, User, Bus, Users, UserCheck, Camera, ShieldCheck, Fingerprint, ClipboardCheck, Bell, AlertTriangle } from 'lucide-react';
 
 const ROLE_METADATA = {
   ADMIN: {
@@ -368,6 +368,49 @@ export default function RoleLandingPage({ onNavigate }) {
                 [ ACCESS BOARDING VERIFICATION ]
               </button>
             </div>
+
+            {/* Wrong Bus & Boarding Alerts Management Console (Phase 9) */}
+            <div style={{
+              background: 'var(--bg-void)',
+              border: '1px solid #ef4444',
+              padding: '18px 20px',
+              borderRadius: '4px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '16px'
+            }}>
+              <div style={{ maxWidth: '520px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', fontWeight: 800, fontSize: '0.95rem', letterSpacing: '0.04em' }}>
+                  <Bell size={18} />
+                  WRONG BUS DETECTION & REAL-TIME ALERTS CONSOLE
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: '4px', lineHeight: 1.5 }}>
+                  Real-time boarding anomaly tracking (wrong bus, wrong stop, unknown student), in-charge supervisor notifications, multi-incident escalation pattern auditing, and manual override verification.
+                </div>
+              </div>
+              <button
+                onClick={() => onNavigate && onNavigate('alerts')}
+                className="mono-btn"
+                style={{
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer'
+                }}
+                id="btn-access-alerts-dashboard"
+              >
+                <AlertTriangle size={16} />
+                [ ACCESS ALERTS CONSOLE ]
+              </button>
+            </div>
           </div>
         )}
 
@@ -409,6 +452,49 @@ export default function RoleLandingPage({ onNavigate }) {
               >
                 <ClipboardCheck size={16} />
                 [ ACCESS BOARDING CONSOLE ]
+              </button>
+            </div>
+
+            {/* In-Charge Real-time Alerts View */}
+            <div style={{
+              background: 'var(--bg-void)',
+              border: '1px solid #ef4444',
+              padding: '18px 20px',
+              borderRadius: '4px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '16px'
+            }}>
+              <div style={{ maxWidth: '520px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', fontWeight: 800, fontSize: '0.95rem', letterSpacing: '0.04em' }}>
+                  <Bell size={18} />
+                  ACTIVE BOARDING ALERTS & OVERRIDES
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: '4px', lineHeight: 1.5 }}>
+                  Immediate wrong bus & wrong stop notification feed. Review student mismatch photos, approve or reject boarding overrides.
+                </div>
+              </div>
+              <button
+                onClick={() => onNavigate && onNavigate('alerts')}
+                className="mono-btn"
+                style={{
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer'
+                }}
+                id="btn-access-incharge-alerts"
+              >
+                <AlertTriangle size={16} />
+                [ VIEW ACTIVE ALERTS ]
               </button>
             </div>
           </div>

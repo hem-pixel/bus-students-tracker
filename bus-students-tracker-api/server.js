@@ -31,6 +31,7 @@ const recognitionRoutes = require('./routes/recognition');
 const verificationRoutes = require('./routes/verification');
 const modelRoutes = require('./routes/models');
 const boardingRoutes = require('./routes/boarding');
+const alertRoutes = require('./routes/alerts');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -107,6 +108,8 @@ app.use('/api/verification', verificationRoutes);
 app.use('/api/models', modelRoutes);
 app.use('/api/boarding', boardingRoutes);
 console.log('[SERVER] ✅ Boarding verification routes registered');
+app.use('/api/alerts', alertRoutes);
+console.log('[SERVER] ✅ Alert management routes registered');
 
 // 404 for undefined routes
 app.use((req, res) => {

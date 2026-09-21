@@ -19,8 +19,10 @@ class BoardingVerificationService {
         [studentId]
       );
 
+      let verification = null;
+
       if (studentResult.rows.length === 0) {
-        return {
+        verification = {
           status: 'UNKNOWN_STUDENT',
           reason: 'Student ID not found in database',
           studentId,
@@ -30,86 +32,97 @@ class BoardingVerificationService {
           severity: 'HIGH',
           timestamp: new Date().toISOString()
         };
+      } else {
+        const student = studentResult.rows[0];
+
+        // 2. Get student's active bus assignment
+        const assignmentResult = await db.query(
+          `SELECT 
+            id, bus_id, stop_id, route_id, boarding_pass_number
+           FROM student_bus_assignments
+           WHERE student_id = $1 AND is_active = TRUE
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [studentId]
+        );
+
+        if (assignmentResult.rows.length === 0) {
+          verification = {
+            status: 'NO_ASSIGNMENT',
+            reason: 'Student has no active bus assignment',
+            studentId,
+            student: student.full_name,
+            registerNumber: student.register_number,
+            busId,
+            stopId,
+            confidenceScore,
+            severity: 'HIGH',
+            timestamp: new Date().toISOString()
+          };
+        } else {
+          const assignment = assignmentResult.rows[0];
+
+          // 3. Verify bus authorization
+          if (assignment.bus_id !== busId) {
+            verification = {
+              status: 'WRONG_BUS',
+              reason: `Student assigned to Bus ${assignment.bus_id}, attempting Bus ${busId}`,
+              studentId,
+              student: student.full_name,
+              registerNumber: student.register_number,
+              boardingBusId: busId,
+              busId,
+              assignedBusId: assignment.bus_id,
+              assignedStopId: assignment.stop_id,
+              confidenceScore,
+              severity: 'HIGH',
+              timestamp: new Date().toISOString()
+            };
+          } else if (assignment.stop_id !== stopId) {
+            // 4. Verify stop authorization
+            verification = {
+              status: 'WRONG_STOP',
+              reason: `Student assigned to Stop ${assignment.stop_id}, attempting Stop ${stopId}`,
+              studentId,
+              student: student.full_name,
+              registerNumber: student.register_number,
+              busId,
+              boardingStopId: stopId,
+              assignedStopId: assignment.stop_id,
+              confidenceScore,
+              severity: 'MEDIUM',
+              timestamp: new Date().toISOString()
+            };
+          } else {
+            // 5. All checks passed - VERIFIED
+            verification = {
+              status: 'VERIFIED',
+              reason: 'Student authorized to board this bus at this stop',
+              studentId,
+              student: student.full_name,
+              registerNumber: student.register_number,
+              busId,
+              stopId,
+              boardingPassNumber: assignment.boarding_pass_number,
+              confidenceScore,
+              severity: 'NONE',
+              timestamp: new Date().toISOString()
+            };
+          }
+        }
       }
 
-      const student = studentResult.rows[0];
-
-      // 2. Get student's active bus assignment
-      const assignmentResult = await db.query(
-        `SELECT 
-          id, bus_id, stop_id, route_id, boarding_pass_number
-         FROM student_bus_assignments
-         WHERE student_id = $1 AND is_active = TRUE
-         ORDER BY created_at DESC
-         LIMIT 1`,
-        [studentId]
-      );
-
-      if (assignmentResult.rows.length === 0) {
-        return {
-          status: 'NO_ASSIGNMENT',
-          reason: 'Student has no active bus assignment',
-          studentId,
-          student: student.full_name,
-          registerNumber: student.register_number,
-          busId,
-          stopId,
-          confidenceScore,
-          severity: 'HIGH',
-          timestamp: new Date().toISOString()
-        };
+      // Phase 9: After verification, trigger alert if anomaly
+      if (verification.status !== 'VERIFIED') {
+        try {
+          const alertService = require('./alertService');
+          await alertService.createAlert(verification);
+        } catch (alertErr) {
+          console.error('[ALERT CREATION FAILED]', alertErr.message);
+        }
       }
 
-      const assignment = assignmentResult.rows[0];
-
-      // 3. Verify bus authorization
-      if (assignment.bus_id !== busId) {
-        return {
-          status: 'WRONG_BUS',
-          reason: `Student assigned to Bus ${assignment.bus_id}, attempting Bus ${busId}`,
-          studentId,
-          student: student.full_name,
-          registerNumber: student.register_number,
-          boardingBusId: busId,
-          assignedBusId: assignment.bus_id,
-          assignedStopId: assignment.stop_id,
-          confidenceScore,
-          severity: 'HIGH',
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      // 4. Verify stop authorization
-      if (assignment.stop_id !== stopId) {
-        return {
-          status: 'WRONG_STOP',
-          reason: `Student assigned to Stop ${assignment.stop_id}, attempting Stop ${stopId}`,
-          studentId,
-          student: student.full_name,
-          registerNumber: student.register_number,
-          busId,
-          boardingStopId: stopId,
-          assignedStopId: assignment.stop_id,
-          confidenceScore,
-          severity: 'MEDIUM',
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      // 5. All checks passed - VERIFIED
-      return {
-        status: 'VERIFIED',
-        reason: 'Student authorized to board this bus at this stop',
-        studentId,
-        student: student.full_name,
-        registerNumber: student.register_number,
-        busId,
-        stopId,
-        boardingPassNumber: assignment.boarding_pass_number,
-        confidenceScore,
-        severity: 'NONE',
-        timestamp: new Date().toISOString()
-      };
+      return verification;
     } catch (err) {
       console.error('[VERIFICATION ERROR]', err.message);
       throw err;

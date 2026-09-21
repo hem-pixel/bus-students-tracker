@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import CommandCenterHeader from './components/CommandCenterHeader';
+import AppSidebar from './components/AppSidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Core System Views
@@ -21,6 +22,7 @@ import CameraStateDemoPage from './pages/CameraStateDemoPage';
 
 // Authentication & Protected Role Views
 import LoginPage from './pages/LoginPage';
+import UnifiedDashboard from './pages/UnifiedDashboard';
 import RoleLandingPage from './pages/protected/RoleLandingPage';
 import TransportMasterPage from './pages/admin/TransportMasterPage';
 import StudentManagementPage from './pages/admin/StudentManagementPage';
@@ -29,10 +31,14 @@ import CameraManagementPage from './pages/admin/CameraManagementPage';
 import DriverVerificationDashboard from './pages/admin/DriverVerificationDashboard';
 import BiometricEnrollmentPage from './pages/admin/BiometricEnrollmentPage';
 import BoardingVerificationDashboard from './pages/admin/BoardingVerificationDashboard';
+import AlertsDashboard from './pages/admin/AlertsDashboard';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('opening');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { user } = useAuth();
+
+  const showSidebar = Boolean(user && !['opening', 'loading', 'login'].includes(currentPage));
 
   // Hash-based direct view access for testing (e.g. #404, #network-demo, #camera-demo)
   useEffect(() => {
@@ -49,24 +55,8 @@ function AppContent() {
   }, []);
 
   const navigateToRole = (role) => {
-    switch (role) {
-      case 'ADMIN':
-        setCurrentPage('admin');
-        break;
-      case 'TRANSPORT_STAFF':
-        setCurrentPage('transport-staff');
-        break;
-      case 'BUS_IN_CHARGE':
-        setCurrentPage('bus-in-charge');
-        break;
-      case 'DRIVER':
-        setCurrentPage('driver');
-        break;
-      case 'STUDENT':
-      default:
-        setCurrentPage('student');
-        break;
-    }
+    // Default institutional landing page is the Unified Dashboard for all authenticated roles
+    setCurrentPage('dashboard');
   };
 
   const renderCurrentPage = () => {
@@ -79,7 +69,7 @@ function AppContent() {
           <LoadingPage 
             onComplete={() => {
               if (user) {
-                navigateToRole(user.role);
+                setCurrentPage('dashboard');
               } else {
                 setCurrentPage('login');
               }
@@ -110,13 +100,30 @@ function AppContent() {
         return (
           <LoginPage 
             onLoginSuccess={(authedUser) => {
-              navigateToRole(authedUser.role);
+              setCurrentPage('dashboard');
             }} 
           />
         );
 
+      // Unified Operations Center Dashboard (Universal Default for all authenticated users)
+      case 'dashboard':
+      case 'unified-dashboard':
+      case '/dashboard':
+      case 'admin/dashboard':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE', 'DRIVER', 'STUDENT']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <UnifiedDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
       // Institutional Role-Protected Portals
       case 'transport-master':
+      case 'admin/transport':
+      case 'admin/transport-master':
         return (
           <ProtectedRoute 
             allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
@@ -128,6 +135,8 @@ function AppContent() {
         );
 
       case 'student-management':
+      case 'admin/students':
+      case 'admin/student-management':
         return (
           <ProtectedRoute 
             allowedRoles={['ADMIN', 'TRANSPORT_STAFF']} 
@@ -199,6 +208,19 @@ function AppContent() {
           </ProtectedRoute>
         );
 
+      case 'alerts':
+      case 'alerts-dashboard':
+      case 'admin/alerts':
+        return (
+          <ProtectedRoute 
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']} 
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <AlertsDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
       case 'admin':
         return (
           <ProtectedRoute 
@@ -262,12 +284,29 @@ function AppContent() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-void)' }}>
       {/* Top Institutional Header */}
-      <CommandCenterHeader onNavigate={setCurrentPage} />
+      <CommandCenterHeader 
+        onNavigate={setCurrentPage}
+        showSidebarToggle={showSidebar}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)}
+      />
 
-      {/* Main Page Content Area */}
-      <main style={{ flex: 1, position: 'relative' }}>
-        {renderCurrentPage()}
-      </main>
+      {/* Workspace Area: Sidebar + Main Content */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
+        {showSidebar && (
+          <AppSidebar 
+            currentPage={currentPage}
+            onNavigate={setCurrentPage}
+            isCollapsed={isSidebarCollapsed}
+            onToggle={() => setIsSidebarCollapsed(prev => !prev)}
+          />
+        )}
+
+        {/* Main Page Content Area */}
+        <main style={{ flex: 1, minWidth: 0, position: 'relative', overflowY: 'auto' }}>
+          {renderCurrentPage()}
+        </main>
+      </div>
 
       {/* Persistent Institutional Footer */}
       <footer

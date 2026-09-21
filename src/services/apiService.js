@@ -353,6 +353,23 @@ export const apiService = {
     getEvents: (busId, limit = 50) => request(`/boarding/events/${busId}?limit=${limit}`),
     override: (eventId, data) => request(`/boarding/${eventId}/override`, { method: 'POST', body: JSON.stringify(data) }),
     getStudentAttendance: (studentId, daysBack = 30) => request(`/boarding/attendance/${studentId}?daysBack=${daysBack}`)
+  },
+
+  // Wrong Bus Detection & Alerts (Phase 9)
+  alerts: {
+    create: (data) => request('/alerts/create', { method: 'POST', body: JSON.stringify(data) }),
+    getActive: () => request('/alerts/active'),
+    getStats: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/alerts/stats${qs ? `?${qs}` : ''}`);
+    },
+    getHistory: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/alerts/history${qs ? `?${qs}` : ''}`);
+    },
+    getEscalations: () => request('/alerts/escalations'),
+    acknowledge: (alertId) => request(`/alerts/${alertId}/acknowledge`, { method: 'POST' }),
+    override: (alertId, data) => request(`/alerts/${alertId}/override`, { method: 'POST', body: JSON.stringify(data) })
   }
 };
 
@@ -368,5 +385,6 @@ export const recognitionAPI = apiService.recognition;
 export const verificationAPI = apiService.verification;
 export const modelPerformanceAPI = apiService.modelPerformance;
 export const boardingAPI = apiService.boarding;
+export const alertsAPI = apiService.alerts;
 
 

@@ -29,8 +29,10 @@ import {
   Key,
   Check,
   Camera,
-  Layers
+  Layers,
+  Video
 } from 'lucide-react';
+import WebcamCapture from '../../components/WebcamCapture';
 
 export default function DriverVerificationDashboard({ onNavigate }) {
   const { user } = useAuth();
@@ -78,6 +80,8 @@ export default function DriverVerificationDashboard({ onNavigate }) {
   const [verifyTarget, setVerifyTarget] = useState({ busId: '', driverId: '' });
   const [lightingCondition, setLightingCondition] = useState('OPTIMAL');
   const [liveVerifyResult, setLiveVerifyResult] = useState(null);
+  const [driverCameraMode, setDriverCameraMode] = useState('LIVE_WEBCAM'); // 'LIVE_WEBCAM' | 'SIMULATOR'
+  const [capturedDriverImage, setCapturedDriverImage] = useState(null);
 
   // Audit Logs Drawer
   const [showLogsDrawer, setShowLogsDrawer] = useState(false);
@@ -351,6 +355,7 @@ export default function DriverVerificationDashboard({ onNavigate }) {
     });
     setLightingCondition('OPTIMAL');
     setLiveVerifyResult(null);
+    setCapturedDriverImage(null);
     setLiveVerifyModalOpen(true);
   };
 
@@ -371,7 +376,8 @@ export default function DriverVerificationDashboard({ onNavigate }) {
         bus_id: verifyTarget.busId,
         driver_id: verifyTarget.driverId,
         lighting_condition: lightingCondition,
-        face_features: dummyVector
+        face_features: dummyVector,
+        ...(capturedDriverImage ? { face_image: capturedDriverImage } : {})
       };
 
       const res = await verificationAPI.verifyDriver(payload);
@@ -400,7 +406,7 @@ export default function DriverVerificationDashboard({ onNavigate }) {
         liveness_status: 'LIVE',
         euclidean_distance: 0.31,
         cosine_similarity: 0.952,
-        hud_frame_svg: `<svg viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg"><rect width="640" height="480" fill="#0c1015"/><circle cx="320" cy="240" r="130" stroke="#00ff88" stroke-width="2" fill="none"/><text x="320" y="240" fill="#00ff88" font-size="14" text-anchor="middle" font-family="monospace">DRIVER VERIFIED: ${(matchedDriver?.name || 'DRIVER').toUpperCase()} (95.2%)</text></svg>`,
+        hud_frame_svg: `<svg viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg"><rect width="640" height="480" fill="#0c1015"/><circle cx="320" cy="240" r="130" stroke="#00AA00" stroke-width="2" fill="none"/><text x="320" y="240" fill="#00AA00" font-size="14" text-anchor="middle" font-family="monospace">DRIVER VERIFIED: ${(matchedDriver?.name || 'DRIVER').toUpperCase()} (95.2%)</text></svg>`,
         created_at: new Date().toISOString()
       };
 
@@ -1232,67 +1238,164 @@ export default function DriverVerificationDashboard({ onNavigate }) {
                 </div>
               </div>
 
-              {/* Simulated Video Preview Viewfinder */}
-              <div 
-                style={{
-                  height: '200px',
-                  background: '#040608',
-                  border: '1px solid var(--border-strong)',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {/* Crosshairs & Guide Box */}
+              {/* Camera Source Selector: Live Webcam vs Edge Cam Simulator */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  FEED SOURCE & BIOMETRIC CAPTURE
+                </label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setDriverCameraMode('LIVE_WEBCAM')}
+                    className="mono-btn"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '8px',
+                      fontSize: '0.75rem',
+                      background: driverCameraMode === 'LIVE_WEBCAM' ? 'var(--text-pure)' : 'var(--bg-void)',
+                      color: driverCameraMode === 'LIVE_WEBCAM' ? 'var(--bg-void)' : 'var(--text-secondary)',
+                      border: '1px solid var(--border-default)',
+                      fontWeight: 700
+                    }}
+                  >
+                    <Camera size={14} />
+                    <span>[ 🔴 LIVE WEBCAM ]</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverCameraMode('SIMULATOR')}
+                    className="mono-btn"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '8px',
+                      fontSize: '0.75rem',
+                      background: driverCameraMode === 'SIMULATOR' ? 'var(--text-pure)' : 'var(--bg-void)',
+                      color: driverCameraMode === 'SIMULATOR' ? 'var(--bg-void)' : 'var(--text-secondary)',
+                      border: '1px solid var(--border-default)',
+                      fontWeight: 700
+                    }}
+                  >
+                    <Video size={14} />
+                    <span>[ ⚡ EDGE RTSP SIMULATOR ]</span>
+                  </button>
+                </div>
+              </div>
+
+              {driverCameraMode === 'LIVE_WEBCAM' ? (
+                <div>
+                  <WebcamCapture
+                    height="220px"
+                    width="100%"
+                    showCaptureButton={true}
+                    onCapture={(base64) => {
+                      setCapturedDriverImage(base64);
+                      showToast('Driver face biometric frame captured from live webcam.', 'success');
+                    }}
+                  />
+                  {capturedDriverImage && (
+                    <div style={{
+                      marginTop: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      background: 'rgba(0,170,0,0.1)',
+                      border: '1px solid #00AA00',
+                      borderRadius: '4px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img 
+                          src={capturedDriverImage} 
+                          alt="Captured Driver" 
+                          style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #00AA00' }} 
+                        />
+                        <span style={{ fontSize: '0.72rem', color: '#00AA00', fontFamily: 'var(--font-mono)' }}>
+                          ✓ WEBCAM BIOMETRIC FRAME READY (BASE64 JPEG)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCapturedDriverImage(null)}
+                        className="mono-btn"
+                        style={{ fontSize: '0.68rem', padding: '3px 8px', color: 'var(--text-secondary)' }}
+                      >
+                        RETAKE
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Simulated Video Preview Viewfinder */
                 <div 
                   style={{
-                    width: '140px',
-                    height: '140px',
-                    border: '2px dashed #00ff88',
-                    borderRadius: '8px',
+                    height: '200px',
+                    background: '#040608',
+                    border: '1px solid var(--border-strong)',
+                    borderRadius: '6px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#00ff88',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    fontSize: '0.7rem',
-                    fontFamily: 'var(--font-mono)'
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                 >
-                  <UserCheck size={28} />
-                  <span>FACE ALIGNED</span>
-                </div>
+                  {/* Crosshairs & Guide Box */}
+                  <div 
+                    style={{
+                      width: '140px',
+                      height: '140px',
+                      border: '2px dashed #00AA00',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#00AA00',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      fontSize: '0.7rem',
+                      fontFamily: 'var(--font-mono)'
+                    }}
+                  >
+                    <UserCheck size={28} />
+                    <span>FACE ALIGNED</span>
+                  </div>
 
-                <div 
-                  style={{
-                    position: 'absolute',
-                    top: '8px',
-                    left: '10px',
-                    fontSize: '0.65rem',
-                    fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-muted)'
-                  }}
-                >
-                  EDGE CAM-01 • RTSP://192.168.1.104:554/LIVE
-                </div>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '10px',
+                      fontSize: '0.65rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-muted)'
+                    }}
+                  >
+                    EDGE CAM-01 • RTSP://192.168.1.104:554/LIVE
+                  </div>
 
-                <div 
-                  style={{
-                    position: 'absolute',
-                    bottom: '8px',
-                    right: '10px',
-                    fontSize: '0.65rem',
-                    fontFamily: 'var(--font-mono)',
-                    color: '#00ff88'
-                  }}
-                >
-                  FPS: 30.0 • 1080P FHD
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      bottom: '8px',
+                      right: '10px',
+                      fontSize: '0.65rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: '#00AA00'
+                    }}
+                  >
+                    FPS: 30.0 • 1080P FHD
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Result Feedback if any */}
               {liveVerifyResult && (
