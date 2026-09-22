@@ -285,6 +285,7 @@ function AppContent() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-void)' }}>
       {/* Top Institutional Header */}
       <CommandCenterHeader 
+        currentPage={currentPage}
         onNavigate={setCurrentPage}
         showSidebarToggle={showSidebar}
         isSidebarCollapsed={isSidebarCollapsed}

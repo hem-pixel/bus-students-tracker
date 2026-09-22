@@ -117,6 +117,7 @@ export default function CameraManagementPage({ onNavigate }) {
   const [selectedCameraToEdit, setSelectedCameraToEdit] = useState(null);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [cameraToDelete, setCameraToDelete] = useState(null);
+  const [modalError, setModalError] = useState(null);
 
   // Form States
   const [registerForm, setRegisterForm] = useState({
@@ -341,6 +342,7 @@ export default function CameraManagementPage({ onNavigate }) {
   // Registration Submit
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
+    setModalError(null);
     setActionLoading(true);
     try {
       const payload = {
@@ -352,8 +354,9 @@ export default function CameraManagementPage({ onNavigate }) {
       await apiService.cameras.create(payload);
       showToast(`Edge Vision Camera registered and linked to ${payload.bus_id}.`, 'success');
       setShowRegisterModal(false);
-      loadAllData();
+      await loadAllData();
     } catch (err) {
+      setModalError(err.message || 'Registration failed. Please verify input.');
       showToast(`Registration failed: ${err.message}`, 'error');
     } finally {
       setActionLoading(false);
@@ -363,6 +366,7 @@ export default function CameraManagementPage({ onNavigate }) {
   // Configuration Edit Submit
   const handleConfigSubmit = async (e) => {
     e.preventDefault();
+    setModalError(null);
     setActionLoading(true);
     try {
       const payload = {
@@ -374,8 +378,9 @@ export default function CameraManagementPage({ onNavigate }) {
       await apiService.cameras.update(configForm.id, payload);
       showToast(`Camera hardware configuration updated successfully.`, 'success');
       setShowConfigModal(false);
-      loadAllData();
+      await loadAllData();
     } catch (err) {
+      setModalError(err.message || 'Configuration update failed. Please verify input.');
       showToast(`Configuration update failed: ${err.message}`, 'error');
     } finally {
       setActionLoading(false);
@@ -385,14 +390,16 @@ export default function CameraManagementPage({ onNavigate }) {
   // Delete Camera
   const handleDeleteCamera = async () => {
     if (!cameraToDelete) return;
+    setModalError(null);
     setActionLoading(true);
     try {
       await apiService.cameras.delete(cameraToDelete.id);
       showToast(`Camera ${cameraToDelete.id.substring(0, 8)} decommissioned from fleet.`, 'success');
       setShowDeleteConfirmModal(false);
       setCameraToDelete(null);
-      loadAllData();
+      await loadAllData();
     } catch (err) {
+      setModalError(err.message || 'Decommissioning failed.');
       showToast(`Decommissioning failed: ${err.message}`, 'error');
     } finally {
       setActionLoading(false);
@@ -401,6 +408,7 @@ export default function CameraManagementPage({ onNavigate }) {
 
   // Open Edit Modal
   const openEditModal = (cam) => {
+    setModalError(null);
     setSelectedCameraToEdit(cam);
     setConfigForm({
       id: cam.id,
@@ -420,6 +428,7 @@ export default function CameraManagementPage({ onNavigate }) {
 
   // Open Calibration Modal
   const openCalibrationModal = (cameraId) => {
+    setModalError(null);
     setCalibrationForm((prev) => ({
       ...prev,
       camera_id: cameraId || selectedCameraId || ''
@@ -430,6 +439,7 @@ export default function CameraManagementPage({ onNavigate }) {
   // Submit Calibration
   const handleCalibrationSubmit = async (e) => {
     e.preventDefault();
+    setModalError(null);
     setActionLoading(true);
     try {
       const payload = {
@@ -446,8 +456,9 @@ export default function CameraManagementPage({ onNavigate }) {
       await apiService.cameraCalibration.record(payload);
       showToast(`Optical calibration profile recorded for camera.`, 'success');
       setShowCalibrationModal(false);
-      loadAllData();
+      await loadAllData();
     } catch (err) {
+      setModalError(err.message || 'Calibration recording failed.');
       showToast(`Calibration recording failed: ${err.message}`, 'error');
     } finally {
       setActionLoading(false);
@@ -460,7 +471,7 @@ export default function CameraManagementPage({ onNavigate }) {
     try {
       await apiService.cameraCalibration.verify(calibId, { verified_by: user?.user_id || 'ADMIN' });
       showToast(`Calibration profile verified and locked into active vision pipeline.`, 'success');
-      loadAllData();
+      await loadAllData();
     } catch (err) {
       showToast(`Verification failed: ${err.message}`, 'error');
     } finally {
@@ -472,6 +483,7 @@ export default function CameraManagementPage({ onNavigate }) {
   const handleResolveEventSubmit = async (e) => {
     e.preventDefault();
     if (!selectedEventToResolve) return;
+    setModalError(null);
     setActionLoading(true);
     try {
       await apiService.cameraEvents.resolve(selectedEventToResolve.id, {
@@ -481,8 +493,9 @@ export default function CameraManagementPage({ onNavigate }) {
       setShowResolveModal(false);
       setSelectedEventToResolve(null);
       setResolutionNotes('');
-      loadAllData();
+      await loadAllData();
     } catch (err) {
+      setModalError(err.message || 'Failed to resolve incident.');
       showToast(`Failed to resolve incident: ${err.message}`, 'error');
     } finally {
       setActionLoading(false);
@@ -668,7 +681,10 @@ export default function CameraManagementPage({ onNavigate }) {
 
           {user?.role === 'ADMIN' && (
             <button
-              onClick={() => setShowRegisterModal(true)}
+              onClick={() => {
+                setModalError(null);
+                setShowRegisterModal(true);
+              }}
               className="mono-btn mono-btn-primary"
               style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '8px 16px' }}
               id="btn-register-camera"
@@ -1042,6 +1058,7 @@ export default function CameraManagementPage({ onNavigate }) {
                       {user?.role === 'ADMIN' && (
                         <button
                           onClick={() => {
+                            setModalError(null);
                             setCameraToDelete(cam);
                             setShowDeleteConfirmModal(true);
                           }}
@@ -1382,6 +1399,7 @@ export default function CameraManagementPage({ onNavigate }) {
                           {!evt.resolved && (
                             <button
                               onClick={() => {
+                                setModalError(null);
                                 setSelectedEventToResolve(evt);
                                 setResolutionNotes('');
                                 setShowResolveModal(true);
@@ -1629,7 +1647,10 @@ export default function CameraManagementPage({ onNavigate }) {
 
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
                 <button
-                  onClick={() => setShowRegisterModal(true)}
+                  onClick={() => {
+                    setModalError(null);
+                    setShowRegisterModal(true);
+                  }}
                   className="mono-btn mono-btn-primary"
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '10px 16px' }}
                 >
@@ -1774,6 +1795,25 @@ export default function CameraManagementPage({ onNavigate }) {
                 <X size={14} />
               </button>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleRegisterSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
@@ -1938,6 +1978,25 @@ export default function CameraManagementPage({ onNavigate }) {
               </button>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleConfigSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -2086,6 +2145,25 @@ export default function CameraManagementPage({ onNavigate }) {
               </button>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCalibrationSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -2223,6 +2301,25 @@ export default function CameraManagementPage({ onNavigate }) {
               </button>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <div style={{ background: '#080808', border: '1px solid #1c1c1c', padding: '14px', borderRadius: '4px', marginBottom: '16px', fontSize: '0.8rem' }}>
               <div style={{ color: 'var(--text-muted)' }}>Event Type: <strong style={{ color: '#ffffff' }}>{selectedEventToResolve.event_type}</strong></div>
               <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>Camera: <span style={{ fontFamily: 'var(--font-mono)', color: '#ffffff' }}>{selectedEventToResolve.camera_id}</span></div>
@@ -2266,6 +2363,26 @@ export default function CameraManagementPage({ onNavigate }) {
                 DECOMMISSION CAMERA?
               </h3>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
               Are you sure you want to permanently decommission camera <strong style={{ color: '#ffffff' }}>{cameraToDelete.id.substring(0, 16)}...</strong> assigned to Bus {cameraToDelete.bus_id}? All active telemetry stream bindings will terminate.
             </p>

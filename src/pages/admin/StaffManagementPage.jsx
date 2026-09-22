@@ -110,6 +110,7 @@ export default function StaffManagementPage({ onNavigate }) {
   const [formData, setFormData] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [salaryData, setSalaryData] = useState(null);
+  const [modalError, setModalError] = useState(null);
 
   // Load all primary and reference data
   const loadAllData = async () => {
@@ -249,6 +250,7 @@ export default function StaffManagementPage({ onNavigate }) {
   // Staff CRUD Handlers
   // -------------------------------------------------------------
   const handleOpenStaffCreate = () => {
+    setModalError(null);
     setFormData({
       staff_type: 'DRIVER',
       employee_id: `STF-${String(staffList.length + 1).padStart(3, '0')}`,
@@ -272,6 +274,7 @@ export default function StaffManagementPage({ onNavigate }) {
   };
 
   const handleOpenStaffEdit = (staff) => {
+    setModalError(null);
     setSelectedItem(staff);
     setFormData({
       staff_type: staff.staff_type || 'DRIVER',
@@ -297,7 +300,7 @@ export default function StaffManagementPage({ onNavigate }) {
   const handleSubmitStaffForm = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
+    setModalError(null);
     try {
       const payload = {
         ...formData,
@@ -319,10 +322,10 @@ export default function StaffManagementPage({ onNavigate }) {
         setModalMode(null);
         await loadAllData();
       } else {
-        setError(res.message || 'Operation failed.');
+        setModalError(res.message || 'Operation failed.');
       }
     } catch (err) {
-      setError(err.message || 'Failed to submit staff form.');
+      setModalError(err.message || 'Failed to submit staff form.');
     } finally {
       setSubmitting(false);
     }
@@ -331,6 +334,7 @@ export default function StaffManagementPage({ onNavigate }) {
   const handleDeleteStaff = async () => {
     if (!selectedItem) return;
     setSubmitting(true);
+    setModalError(null);
     try {
       const res = await apiService.staff.delete(selectedItem.staff_id);
       if (res.success) {
@@ -338,10 +342,10 @@ export default function StaffManagementPage({ onNavigate }) {
         setModalMode(null);
         await loadAllData();
       } else {
-        setError(res.message || 'Delete operation failed.');
+        setModalError(res.message || 'Delete operation failed.');
       }
     } catch (err) {
-      setError(err.message || 'Error deleting staff record.');
+      setModalError(err.message || 'Error deleting staff record.');
     } finally {
       setSubmitting(false);
     }
@@ -351,6 +355,7 @@ export default function StaffManagementPage({ onNavigate }) {
   // Shift Roster Handlers
   // -------------------------------------------------------------
   const handleOpenShiftCreate = () => {
+    setModalError(null);
     const activeStaff = staffList.filter(s => s.employment_status === 'ACTIVE');
     setFormData({
       staff_id: activeStaff[0]?.staff_id || '',
@@ -369,7 +374,7 @@ export default function StaffManagementPage({ onNavigate }) {
   const handleSubmitShiftForm = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
+    setModalError(null);
     try {
       const res = await apiService.shifts.create(formData);
       if (res.success) {
@@ -377,16 +382,17 @@ export default function StaffManagementPage({ onNavigate }) {
         setModalMode(null);
         await loadAllData();
       } else {
-        setError(res.message || 'Could not assign shift.');
+        setModalError(res.message || 'Could not assign shift.');
       }
     } catch (err) {
-      setError(err.message || 'Shift assignment failed.');
+      setModalError(err.message || 'Shift assignment failed.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleOpenShiftUpdate = (shift) => {
+    setModalError(null);
     setSelectedItem(shift);
     setFormData({
       status: shift.status || 'SCHEDULED',
@@ -400,7 +406,7 @@ export default function StaffManagementPage({ onNavigate }) {
   const handleSubmitShiftUpdate = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
+    setModalError(null);
     try {
       const payload = {
         ...formData
@@ -414,10 +420,10 @@ export default function StaffManagementPage({ onNavigate }) {
         setModalMode(null);
         await loadAllData();
       } else {
-        setError(res.message || 'Update failed.');
+        setModalError(res.message || 'Update failed.');
       }
     } catch (err) {
-      setError(err.message || 'Could not update shift log.');
+      setModalError(err.message || 'Could not update shift log.');
     } finally {
       setSubmitting(false);
     }
@@ -427,6 +433,7 @@ export default function StaffManagementPage({ onNavigate }) {
   // Leave Request Handlers
   // -------------------------------------------------------------
   const handleOpenLeaveCreate = () => {
+    setModalError(null);
     const today = new Date().toISOString().split('T')[0];
     setFormData({
       staff_id: staffList[0]?.staff_id || '',
@@ -443,7 +450,7 @@ export default function StaffManagementPage({ onNavigate }) {
   const handleSubmitLeaveCreate = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
+    setModalError(null);
     try {
       const res = await apiService.leaves.create(formData);
       if (res.success) {
@@ -451,16 +458,17 @@ export default function StaffManagementPage({ onNavigate }) {
         setModalMode(null);
         await loadAllData();
       } else {
-        setError(res.message || 'Failed to submit leave.');
+        setModalError(res.message || 'Failed to submit leave.');
       }
     } catch (err) {
-      setError(err.message || 'Leave submission error.');
+      setModalError(err.message || 'Leave submission error.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleOpenLeaveReview = (leave) => {
+    setModalError(null);
     setSelectedItem(leave);
     setFormData({
       approval_notes: '',
@@ -471,7 +479,7 @@ export default function StaffManagementPage({ onNavigate }) {
 
   const handleReviewLeave = async (action) => {
     setSubmitting(true);
-    setError(null);
+    setModalError(null);
     try {
       let res;
       if (action === 'APPROVE') {
@@ -490,10 +498,10 @@ export default function StaffManagementPage({ onNavigate }) {
         setModalMode(null);
         await loadAllData();
       } else {
-        setError(res.message || `Failed to ${action.toLowerCase()} leave request.`);
+        setModalError(res.message || `Failed to ${action.toLowerCase()} leave request.`);
       }
     } catch (err) {
-      setError(err.message || 'Error processing leave review.');
+      setModalError(err.message || 'Error processing leave review.');
     } finally {
       setSubmitting(false);
     }
@@ -503,6 +511,7 @@ export default function StaffManagementPage({ onNavigate }) {
   // Performance Log Handlers
   // -------------------------------------------------------------
   const handleOpenPerfCreate = (presetStaffId = '') => {
+    setModalError(null);
     setFormData({
       staff_id: presetStaffId || staffList[0]?.staff_id || '',
       log_type: 'FEEDBACK',
@@ -526,7 +535,7 @@ export default function StaffManagementPage({ onNavigate }) {
   const handleSubmitPerformanceLog = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
+    setModalError(null);
     try {
       const payload = { ...formData };
       if (!payload.complaint_from_student_id) payload.complaint_from_student_id = null;
@@ -537,10 +546,10 @@ export default function StaffManagementPage({ onNavigate }) {
         setModalMode(null);
         await loadAllData();
       } else {
-        setError(res.message || 'Failed to log performance.');
+        setModalError(res.message || 'Failed to log performance.');
       }
     } catch (err) {
-      setError(err.message || 'Performance logging error.');
+      setModalError(err.message || 'Performance logging error.');
     } finally {
       setSubmitting(false);
     }
@@ -550,6 +559,7 @@ export default function StaffManagementPage({ onNavigate }) {
   // Salary Structure Handlers
   // -------------------------------------------------------------
   const handleOpenSalaryModal = async (staff) => {
+    setModalError(null);
     setSelectedItem(staff);
     setLoading(true);
     try {
@@ -592,17 +602,18 @@ export default function StaffManagementPage({ onNavigate }) {
   const handleSubmitSalary = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
+    setModalError(null);
     try {
       const res = await apiService.salary.updateStaffSalary(selectedItem.staff_id, formData);
       if (res.success) {
         triggerNotification('Staff salary structure updated.');
         setModalMode(null);
+        await loadAllData();
       } else {
-        setError(res.message || 'Salary update failed.');
+        setModalError(res.message || 'Salary update failed.');
       }
     } catch (err) {
-      setError(err.message || 'Could not update salary structure.');
+      setModalError(err.message || 'Could not update salary structure.');
     } finally {
       setSubmitting(false);
     }
@@ -1146,6 +1157,7 @@ export default function StaffManagementPage({ onNavigate }) {
                         <div style={{ display: 'inline-flex', gap: '6px' }}>
                           <button
                             onClick={() => {
+                              setModalError(null);
                               setSelectedItem(staff);
                               setModalMode('view-staff');
                             }}
@@ -1178,6 +1190,7 @@ export default function StaffManagementPage({ onNavigate }) {
 
                               <button
                                 onClick={() => {
+                                  setModalError(null);
                                   setSelectedItem(staff);
                                   setModalMode('delete-confirm');
                                 }}
@@ -1607,6 +1620,25 @@ export default function StaffManagementPage({ onNavigate }) {
               </button>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmitStaffForm}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
                 <div>
@@ -1841,6 +1873,25 @@ export default function StaffManagementPage({ onNavigate }) {
               </button>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmitShiftForm}>
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '6px' }}>
@@ -1992,6 +2043,25 @@ export default function StaffManagementPage({ onNavigate }) {
               </button>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <div style={{ background: 'var(--bg-void)', padding: '12px', border: '1px solid var(--border-default)', borderRadius: '4px', marginBottom: '16px', fontSize: '0.82rem' }}>
               <div><strong style={{ color: '#ffffff' }}>Operator:</strong> {selectedItem.staff_name}</div>
               <div><strong style={{ color: '#ffffff' }}>Vehicle:</strong> {selectedItem.bus_number} • {selectedItem.route_code}</div>
@@ -2083,6 +2153,25 @@ export default function StaffManagementPage({ onNavigate }) {
                 <X size={16} />
               </button>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmitLeaveCreate}>
               <div style={{ marginBottom: '14px' }}>
@@ -2193,6 +2282,25 @@ export default function StaffManagementPage({ onNavigate }) {
               </button>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <div style={{ background: 'var(--bg-void)', padding: '14px', border: '1px solid var(--border-default)', borderRadius: '4px', marginBottom: '16px', fontSize: '0.85rem' }}>
               <div style={{ marginBottom: '4px' }}><strong style={{ color: '#ffffff' }}>Applicant:</strong> {selectedItem.staff_name} ({selectedItem.employee_id})</div>
               <div style={{ marginBottom: '4px' }}><strong style={{ color: '#ffffff' }}>Leave Period:</strong> {selectedItem.leave_start_date} to {selectedItem.leave_end_date} ({selectedItem.total_days} Days)</div>
@@ -2278,6 +2386,25 @@ export default function StaffManagementPage({ onNavigate }) {
                 <X size={16} />
               </button>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmitPerformanceLog}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
@@ -2439,6 +2566,25 @@ export default function StaffManagementPage({ onNavigate }) {
                 <X size={16} />
               </button>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmitSalary}>
               <div style={{ background: 'var(--bg-void)', padding: '14px', border: '1px solid var(--border-default)', borderRadius: '4px', marginBottom: '16px' }}>
@@ -2638,6 +2784,25 @@ export default function StaffManagementPage({ onNavigate }) {
               <AlertTriangle size={24} />
               <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>DEACTIVATE RECORD?</div>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
               Are you sure you want to deactivate or remove <strong style={{ color: '#ffffff' }}>{selectedItem.first_name} {selectedItem.last_name}</strong> ({selectedItem.employee_id})? Active shifts linked to this personnel will be unassigned.

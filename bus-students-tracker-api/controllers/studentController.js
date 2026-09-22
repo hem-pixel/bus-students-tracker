@@ -1,5 +1,42 @@
 const { query } = require('../config/database');
 
+// Ensure photos column exists for persistent PostgreSQL environments
+query('ALTER TABLE students ADD COLUMN IF NOT EXISTS photos TEXT').catch(() => {});
+
+function normalizeStudentPhotos(student) {
+  if (!student) return student;
+  let parsedPhotos = null;
+  if (student.photos) {
+    try {
+      parsedPhotos = typeof student.photos === 'string' ? JSON.parse(student.photos) : student.photos;
+    } catch (e) {
+      parsedPhotos = null;
+    }
+  }
+  if (!parsedPhotos || typeof parsedPhotos !== 'object') {
+    parsedPhotos = {
+      profile_photo: student.profile_photo_url || '',
+      id_card_front: '',
+      id_card_back: '',
+      parent_guardian_photo: '',
+      emergency_contact_photo: ''
+    };
+  } else {
+    parsedPhotos = {
+      profile_photo: parsedPhotos.profile_photo || student.profile_photo_url || '',
+      id_card_front: parsedPhotos.id_card_front || '',
+      id_card_back: parsedPhotos.id_card_back || '',
+      parent_guardian_photo: parsedPhotos.parent_guardian_photo || '',
+      emergency_contact_photo: parsedPhotos.emergency_contact_photo || ''
+    };
+  }
+  return {
+    ...student,
+    photos: parsedPhotos,
+    profile_photo_url: student.profile_photo_url || parsedPhotos.profile_photo || ''
+  };
+}
+
 /**
  * GET /api/students
  * Optional query filters: search, department, transport_status, year_of_study
@@ -38,10 +75,11 @@ async function getAllStudents(req, res, next) {
     sql += ' ORDER BY roll_number ASC';
 
     const result = await query(sql, params);
+    const students = result.rows.map(normalizeStudentPhotos);
     res.json({
       success: true,
-      count: result.rows.length,
-      data: result.rows
+      count: students.length,
+      data: students
     });
   } catch (err) {
     next(err);
@@ -59,24 +97,24 @@ async function getStudentStats(req, res, next) {
       query("SELECT COUNT(*) as count FROM students WHERE transport_status = 'ACTIVE'"),
       query("SELECT COUNT(*) as count FROM students WHERE transport_status = 'REQUESTED'"),
       query("SELECT COUNT(*) as count FROM student_transport_requests WHERE request_status = 'PENDING'"),
-      query("SELECT COUNT(*) as count FROM student_attendance_log WHERE verification_result = 'VERIFIED'")
+      query("SELECT COUNT(DISTINCT student_id) as count FROM student_attendance_log WHERE boarding_time >= CURRENT_DATE")
     ]);
 
-    const totalStudents = parseInt(totalRes.rows[0]?.count || 0, 10);
-    const activeTransport = parseInt(activeRes.rows[0]?.count || 0, 10);
-    const requestedTransport = parseInt(requestedRes.rows[0]?.count || 0, 10);
-    const pendingRequests = parseInt(pendingReqRes.rows[0]?.count || 0, 10);
-    const verifiedToday = parseInt(verifiedTodayRes.rows[0]?.count || 0, 10);
+    const totalStudents = parseInt(totalRes.rows[0].count, 10);
+    const activeTransport = parseInt(activeRes.rows[0].count, 10);
+    const requestedTransport = parseInt(requestedRes.rows[0].count, 10);
+    const pendingRequests = parseInt(pendingReqRes.rows[0].count, 10);
+    const verifiedToday = parseInt(verifiedTodayRes.rows[0].count, 10);
 
     res.json({
       success: true,
       data: {
         total_students: totalStudents,
         active_transport: activeTransport,
-        inactive_transport: Math.max(0, totalStudents - activeTransport - requestedTransport),
+        inactive_transport: totalStudents - activeTransport - requestedTransport,
         requested_transport: requestedTransport,
         pending_requests: pendingRequests,
-        verified_today: verifiedToday,
+        verified_boardings_today: verifiedToday,
         transport_enrollment_rate: totalStudents > 0 ? ((activeTransport / totalStudents) * 100).toFixed(1) : 0
       }
     });
@@ -100,7 +138,7 @@ async function getStudentById(req, res, next) {
       });
     }
 
-    const student = studentRes.rows[0];
+    const student = normalizeStudentPhotos(studentRes.rows[0]);
 
     // Concurrently fetch assignments, transport requests, and attendance records
     const [assignmentsRes, requestsRes, attendanceRes] = await Promise.all([
@@ -149,7 +187,8 @@ async function createStudent(req, res, next) {
       address = '',
       city = 'Karur',
       postal_code = '639005',
-      notes = ''
+      notes = '',
+      photos = null
     } = req.body;
 
     if (!roll_number || !first_name || !last_name || !email || !department) {
@@ -168,19 +207,30 @@ async function createStudent(req, res, next) {
       });
     }
 
+    let photosJson = null;
+    let finalProfilePhoto = profile_photo_url;
+    if (photos && typeof photos === 'object') {
+      photosJson = JSON.stringify(photos);
+      if (!finalProfilePhoto && photos.profile_photo) {
+        finalProfilePhoto = photos.profile_photo;
+      }
+    } else if (typeof photos === 'string') {
+      photosJson = photos;
+    }
+
     const insertSql = `
       INSERT INTO students (
         roll_number, first_name, last_name, email, phone,
         emergency_contact_name, emergency_contact_phone, date_of_birth,
         department, semester, section, transport_status,
         profile_photo_url, bio_enrolled, face_recognition_id,
-        parent_name, parent_phone, address, city, postal_code, notes
+        parent_name, parent_phone, address, city, postal_code, notes, photos
       ) VALUES (
         $1, $2, $3, $4, $5,
         $6, $7, $8,
         $9, $10, $11, $12,
         $13, $14, $15,
-        $16, $17, $18, $19, $20, $21
+        $16, $17, $18, $19, $20, $21, $22
       ) RETURNING *
     `;
 
@@ -197,7 +247,7 @@ async function createStudent(req, res, next) {
       semester ? parseInt(semester, 10) : 6,
       section || 'A',
       transport_status,
-      profile_photo_url,
+      finalProfilePhoto,
       Boolean(bio_enrolled),
       face_recognition_id,
       parent_name,
@@ -205,14 +255,16 @@ async function createStudent(req, res, next) {
       address,
       city,
       postal_code,
-      notes
+      notes,
+      photosJson
     ];
 
     const result = await query(insertSql, params);
+    const createdStudent = normalizeStudentPhotos(result.rows[0]);
     res.status(201).json({
       success: true,
       message: `Student record '${roll_number}' registered successfully.`,
-      data: result.rows[0]
+      data: createdStudent
     });
   } catch (err) {
     next(err);
@@ -225,7 +277,7 @@ async function createStudent(req, res, next) {
 async function updateStudent(req, res, next) {
   try {
     const { id } = req.params;
-    const fields = req.body;
+    const fields = { ...req.body };
 
     const existingRes = await query('SELECT * FROM students WHERE student_id = $1', [id]);
     if (existingRes.rows.length === 0) {
@@ -235,12 +287,20 @@ async function updateStudent(req, res, next) {
       });
     }
 
+    if (fields.photos && typeof fields.photos === 'object') {
+      if (!fields.profile_photo_url && fields.photos.profile_photo) {
+        fields.profile_photo_url = fields.photos.profile_photo;
+      }
+      fields.photos = JSON.stringify(fields.photos);
+    }
+
     const updateable = [
       'first_name', 'last_name', 'email', 'phone',
       'emergency_contact_name', 'emergency_contact_phone', 'date_of_birth',
       'department', 'semester', 'section', 'transport_status',
       'profile_photo_url', 'bio_enrolled', 'face_recognition_id',
-      'parent_name', 'parent_phone', 'address', 'city', 'postal_code', 'notes'
+      'parent_name', 'parent_phone', 'address', 'city', 'postal_code', 'notes',
+      'photos'
     ];
 
     const setClauses = [];
@@ -263,11 +323,12 @@ async function updateStudent(req, res, next) {
     params.push(id);
     const sql = `UPDATE students SET ${setClauses.join(', ')} WHERE student_id = $${params.length} RETURNING *`;
     const result = await query(sql, params);
+    const updatedStudent = normalizeStudentPhotos(result.rows[0]);
 
     res.json({
       success: true,
       message: 'Student record updated successfully.',
-      data: result.rows[0]
+      data: updatedStudent
     });
   } catch (err) {
     next(err);

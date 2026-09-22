@@ -8,6 +8,7 @@ import { Radio, User, LogOut, KeyRound, PanelLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function CommandCenterHeader({
+  currentPage,
   onNavigate,
   isSidebarCollapsed = false,
   onToggleSidebar,
@@ -215,7 +216,7 @@ export default function CommandCenterHeader({
               <span>LOGOUT</span>
             </button>
           </div>
-        ) : (
+        ) : currentPage !== 'opening' ? (
           <button
             onClick={() => onNavigate && onNavigate('login')}
             className="mono-btn mono-btn-primary"
@@ -231,7 +232,7 @@ export default function CommandCenterHeader({
             <KeyRound size={13} />
             <span>[ SIGN IN ]</span>
           </button>
-        )}
+        ) : null}
       </div>
     </header>
   );

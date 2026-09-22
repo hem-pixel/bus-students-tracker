@@ -30,6 +30,32 @@ export const AuthProvider = ({ children }) => {
     return result;
   };
 
+  const loginStep1 = async (email, password) => {
+    return await authService.loginStep1(email, password);
+  };
+
+  const loginStep2 = async (email, otp) => {
+    const result = await authService.loginStep2(email, otp);
+    setUser(result.user);
+    setSessionToken(result.token);
+    return result;
+  };
+
+  const googleLogin = async (googleData) => {
+    const result = await authService.googleSignIn(googleData);
+    setUser(result.user);
+    setSessionToken(result.token);
+    return result;
+  };
+
+  const forgotPassword = async (email) => {
+    return await authService.forgotPassword(email);
+  };
+
+  const resetPassword = async (data) => {
+    return await authService.resetPassword(data);
+  };
+
   const register = async (userData) => {
     const result = await authService.register(userData);
     setUser(result.user);
@@ -50,6 +76,11 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user && !!sessionToken,
     isLoading,
     login,
+    loginStep1,
+    loginStep2,
+    googleLogin,
+    forgotPassword,
+    resetPassword,
     register,
     logout
   };

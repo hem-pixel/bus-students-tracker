@@ -69,6 +69,7 @@ export default function TransportMasterPage({ onNavigate }) {
   const [modalMode, setModalMode] = useState(null); // 'view' | 'edit' | 'create' | 'delete'
   const [formData, setFormData] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [modalError, setModalError] = useState(null);
 
   // Load all master data
   const loadAllData = async () => {
@@ -206,6 +207,7 @@ export default function TransportMasterPage({ onNavigate }) {
       defaults = { bus_id: data.buses[0]?.id || '', camera_model: 'Hikvision DS-2CD2043G2-I', installation_position: 'ENTRANCE', ip_address: '192.168.1.100', rtsp_url: '', status: 'ONLINE' };
     }
     setFormData(defaults);
+    setModalError(null);
     setModalMode('create');
   };
 
@@ -213,18 +215,21 @@ export default function TransportMasterPage({ onNavigate }) {
   const handleOpenEdit = (item) => {
     setSelectedItem(item);
     setFormData({ ...item });
+    setModalError(null);
     setModalMode('edit');
   };
 
   // Open View Modal
   const handleOpenView = (item) => {
     setSelectedItem(item);
+    setModalError(null);
     setModalMode('view');
   };
 
   // Open Delete Modal
   const handleOpenDelete = (item) => {
     setSelectedItem(item);
+    setModalError(null);
     setModalMode('delete');
   };
 
@@ -232,6 +237,7 @@ export default function TransportMasterPage({ onNavigate }) {
   const handleSubmitModal = async (e) => {
     if (e) e.preventDefault();
     setSubmitting(true);
+    setModalError(null);
     setError(null);
     setSuccessMessage(null);
 
@@ -256,7 +262,7 @@ export default function TransportMasterPage({ onNavigate }) {
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error('[TransportMaster] Mutation error:', err);
-      setError(err.message || 'Operation failed. Please verify fields and permissions.');
+      setModalError(err.message || 'Operation failed. Please verify fields and permissions.');
     } finally {
       setSubmitting(false);
     }
@@ -951,6 +957,26 @@ export default function TransportMasterPage({ onNavigate }) {
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 12px 0', color: '#ffffff' }}>
               CONFIRM RECORD REMOVAL
             </h2>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.6', margin: '0 0 20px 0' }}>
               Are you sure you want to delete this {TABS.find(t => t.id === activeTab).singular} record? Any dependent route assignments or stops will be impacted according to relational integrity constraints.
             </p>
@@ -1010,6 +1036,25 @@ export default function TransportMasterPage({ onNavigate }) {
               <X size={20} />
             </button>
           </div>
+
+          {modalError && (
+            <div style={{
+              background: '#200808',
+              border: '1px solid #7f1d1d',
+              color: '#f87171',
+              padding: '10px 14px',
+              borderRadius: '4px',
+              marginBottom: '16px',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontFamily: 'var(--font-mono)'
+            }}>
+              <AlertCircle size={16} />
+              <span>{modalError}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmitModal}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>

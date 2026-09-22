@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/apiService';
+import PhotoUploadField from '../../components/PhotoUploadField';
 import {
   GraduationCap,
   Bus,
@@ -31,7 +32,8 @@ import {
   Phone,
   Mail,
   Shield,
-  Filter
+  Filter,
+  Camera
 } from 'lucide-react';
 
 const TABS = [
@@ -83,6 +85,8 @@ export default function StudentManagementPage({ onNavigate }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [formData, setFormData] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   // Load all required data
   const loadAllData = async () => {
@@ -215,8 +219,16 @@ export default function StudentManagementPage({ onNavigate }) {
     };
   }, [studentStats, students, requests, attendanceLogs]);
 
+  // Filter stops by selected route in assignment form
+  const routeStops = useMemo(() => {
+    if (!formData.route_id) return stops;
+    const matched = stops.filter(s => s.route_id === formData.route_id);
+    return matched.length ? matched : stops;
+  }, [stops, formData.route_id]);
+
   // Open Create Student Modal
   const handleOpenCreateStudent = () => {
+    setModalError('');
     setSelectedItem(null);
     setFormData({
       roll_number: '',
@@ -234,26 +246,56 @@ export default function StudentManagementPage({ onNavigate }) {
       emergency_contact_phone: '',
       transport_status: 'PENDING_ALLOCATION',
       transport_fee_status: 'PAID',
-      address: 'Karur, Tamil Nadu'
+      address: 'Karur, Tamil Nadu',
+      photos: {
+        profile_photo: '',
+        id_card_front: '',
+        id_card_back: '',
+        parent_guardian_photo: '',
+        emergency_contact_photo: ''
+      }
     });
     setModalMode('student-form');
   };
 
   // Open Edit Student Modal
   const handleOpenEditStudent = (student) => {
+    setModalError('');
     setSelectedItem(student);
-    setFormData({ ...student });
+    let studentPhotos = {
+      profile_photo: '',
+      id_card_front: '',
+      id_card_back: '',
+      parent_guardian_photo: '',
+      emergency_contact_photo: ''
+    };
+    if (student.photos) {
+      if (typeof student.photos === 'string') {
+        try {
+          studentPhotos = { ...studentPhotos, ...JSON.parse(student.photos) };
+        } catch {
+          studentPhotos.profile_photo = student.photos;
+        }
+      } else if (typeof student.photos === 'object') {
+        studentPhotos = { ...studentPhotos, ...student.photos };
+      }
+    } else if (student.profile_photo_url) {
+      studentPhotos.profile_photo = student.profile_photo_url;
+    }
+    setFormData({ ...student, photos: studentPhotos });
     setModalMode('student-form');
   };
 
   // Open View Student Modal
   const handleOpenViewStudent = (student) => {
+    setModalError('');
     setSelectedItem(student);
     setModalMode('view-student');
   };
 
   // Open Assign Bus Modal for a student
   const handleOpenAssignBus = (student) => {
+    setModalError('');
     setSelectedItem(student);
     setFormData({
       student_id: student.student_id || student.id,
@@ -270,6 +312,7 @@ export default function StudentManagementPage({ onNavigate }) {
 
   // Open Review Request Modal
   const handleOpenReviewRequest = (req) => {
+    setModalError('');
     setSelectedItem(req);
     setFormData({
       request_status: 'APPROVED',
@@ -280,12 +323,14 @@ export default function StudentManagementPage({ onNavigate }) {
 
   // Open Inspect Attendance Modal
   const handleOpenInspectAttendance = (log) => {
+    setModalError('');
     setSelectedItem(log);
     setModalMode('attendance-inspect');
   };
 
   // Open Delete Confirmation Modal
   const handleOpenDelete = (item, type = 'student') => {
+    setModalError('');
     setSelectedItem({ ...item, _deleteType: type });
     setModalMode('delete-confirm');
   };
@@ -294,6 +339,7 @@ export default function StudentManagementPage({ onNavigate }) {
   const handleSubmitStudent = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setModalError('');
     setError(null);
     try {
       if (selectedItem) {
@@ -309,7 +355,7 @@ export default function StudentManagementPage({ onNavigate }) {
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error('[StudentManagement] Student form error:', err);
-      setError(err.message || 'Failed to save student profile.');
+      setModalError(err.message || 'Failed to save student profile.');
     } finally {
       setSubmitting(false);
     }
@@ -319,6 +365,7 @@ export default function StudentManagementPage({ onNavigate }) {
   const handleSubmitAssignment = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setModalError('');
     setError(null);
     try {
       await apiService.studentAssignments.assign(formData);
@@ -328,7 +375,7 @@ export default function StudentManagementPage({ onNavigate }) {
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error('[StudentManagement] Assignment error:', err);
-      setError(err.message || 'Failed to complete bus assignment.');
+      setModalError(err.message || 'Failed to complete bus assignment.');
     } finally {
       setSubmitting(false);
     }
@@ -338,6 +385,7 @@ export default function StudentManagementPage({ onNavigate }) {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setModalError('');
     setError(null);
     try {
       const reqId = selectedItem.request_id || selectedItem.id;
@@ -351,7 +399,7 @@ export default function StudentManagementPage({ onNavigate }) {
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error('[StudentManagement] Review error:', err);
-      setError(err.message || 'Failed to submit review decision.');
+      setModalError(err.message || 'Failed to submit review decision.');
     } finally {
       setSubmitting(false);
     }
@@ -360,6 +408,7 @@ export default function StudentManagementPage({ onNavigate }) {
   // Submit Delete / Unassign Action
   const handleSubmitDelete = async () => {
     setSubmitting(true);
+    setModalError('');
     setError(null);
     try {
       if (selectedItem._deleteType === 'assignment') {
@@ -376,7 +425,7 @@ export default function StudentManagementPage({ onNavigate }) {
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error('[StudentManagement] Delete error:', err);
-      setError(err.message || 'Failed to remove record.');
+      setModalError(err.message || 'Failed to remove record.');
     } finally {
       setSubmitting(false);
     }
@@ -451,12 +500,6 @@ export default function StudentManagementPage({ onNavigate }) {
     document.body.removeChild(link);
   };
 
-  // Route-filtered stops
-  const routeStops = useMemo(() => {
-    if (!formData.route_id) return stops;
-    const matched = stops.filter(s => s.route_id === formData.route_id);
-    return matched.length ? matched : stops;
-  }, [stops, formData.route_id]);
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto', minHeight: 'calc(100vh - 120px)' }}>
@@ -1239,7 +1282,7 @@ export default function StudentManagementPage({ onNavigate }) {
             background: 'var(--bg-primary)',
             border: '1px solid #ffffff',
             borderRadius: '4px',
-            maxWidth: '680px',
+            maxWidth: '850px',
             width: '100%',
             maxHeight: '90vh',
             overflowY: 'auto',
@@ -1253,6 +1296,25 @@ export default function StudentManagementPage({ onNavigate }) {
                 <X size={18} />
               </button>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmitStudent}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '14px' }}>
@@ -1400,6 +1462,68 @@ export default function StudentManagementPage({ onNavigate }) {
                 </div>
               </div>
 
+              {/* 5-PHOTO MANDATORY ENROLLMENT BIOMETRIC & DOCUMENT SUITE */}
+              <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <Camera size={16} style={{ color: '#ffffff' }} />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-pure)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Biometric & Identification Documents (5 Mandatory Records)
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                  <PhotoUploadField
+                    label="1. Student Profile Photo"
+                    value={formData.photos?.profile_photo || ''}
+                    onChange={(val) => setFormData({
+                      ...formData,
+                      photos: { ...(formData.photos || {}), profile_photo: val }
+                    })}
+                    description="Clear frontal portrait for facial recognition edge matching"
+                    required
+                  />
+                  <PhotoUploadField
+                    label="2. College ID Card (Front)"
+                    value={formData.photos?.id_card_front || ''}
+                    onChange={(val) => setFormData({
+                      ...formData,
+                      photos: { ...(formData.photos || {}), id_card_front: val }
+                    })}
+                    description="Front face of institutional identity card with barcode"
+                    required
+                  />
+                  <PhotoUploadField
+                    label="3. College ID Card (Back)"
+                    value={formData.photos?.id_card_back || ''}
+                    onChange={(val) => setFormData({
+                      ...formData,
+                      photos: { ...(formData.photos || {}), id_card_back: val }
+                    })}
+                    description="Back face displaying address and emergency terms"
+                    required
+                  />
+                  <PhotoUploadField
+                    label="4. Parent / Guardian Photo"
+                    value={formData.photos?.parent_guardian_photo || ''}
+                    onChange={(val) => setFormData({
+                      ...formData,
+                      photos: { ...(formData.photos || {}), parent_guardian_photo: val }
+                    })}
+                    description="Authorized parent or legal guardian for transit escort"
+                    required
+                  />
+                  <PhotoUploadField
+                    label="5. Emergency Contact Photo"
+                    value={formData.photos?.emergency_contact_photo || ''}
+                    onChange={(val) => setFormData({
+                      ...formData,
+                      photos: { ...(formData.photos || {}), emergency_contact_photo: val }
+                    })}
+                    description="Secondary designated emergency contact verification"
+                    required
+                  />
+                </div>
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
                 <button
                   type="button"
@@ -1451,6 +1575,25 @@ export default function StudentManagementPage({ onNavigate }) {
                 <X size={18} />
               </button>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <div style={{ background: 'var(--bg-surface)', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', fontSize: '0.85rem' }}>
               <div style={{ fontWeight: 700, color: 'var(--text-pure)' }}>
@@ -1597,6 +1740,25 @@ export default function StudentManagementPage({ onNavigate }) {
                 <X size={18} />
               </button>
             </div>
+
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <div style={{ background: 'var(--bg-surface)', padding: '12px 14px', borderRadius: '4px', marginBottom: '16px', fontSize: '0.85rem' }}>
               <div style={{ fontWeight: 700, color: 'var(--text-pure)' }}>
@@ -1781,7 +1943,9 @@ export default function StudentManagementPage({ onNavigate }) {
             background: 'var(--bg-primary)',
             border: '1px solid #ffffff',
             borderRadius: '4px',
-            maxWidth: '600px',
+            maxWidth: '750px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             width: '100%',
             padding: '24px'
           }}>
@@ -1839,6 +2003,196 @@ export default function StudentManagementPage({ onNavigate }) {
                   {selectedItem?.emergency_contact_name || 'Guardian'} ({selectedItem?.emergency_contact_phone || 'N/A'})
                 </div>
               </div>
+
+              {/* 5-Photo Enrollment Gallery */}
+              {(() => {
+                let parsedPhotos = {};
+                if (selectedItem?.photos) {
+                  if (typeof selectedItem.photos === 'object') {
+                    parsedPhotos = selectedItem.photos;
+                  } else {
+                    try {
+                      parsedPhotos = JSON.parse(selectedItem.photos);
+                    } catch (e) {
+                      parsedPhotos = {};
+                    }
+                  }
+                }
+                if (!parsedPhotos.profile_photo && selectedItem?.profile_photo_url) {
+                  parsedPhotos.profile_photo = selectedItem.profile_photo_url;
+                }
+
+                const photoSlots = [
+                  { id: 'profile_photo', label: 'Student Profile' },
+                  { id: 'id_card_front', label: 'ID Card (Front)' },
+                  { id: 'id_card_back', label: 'ID Card (Back)' },
+                  { id: 'parent_guardian_photo', label: 'Parent / Guardian' },
+                  { id: 'emergency_contact_photo', label: 'Emergency Contact' }
+                ];
+
+                return (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '16px',
+                    background: 'var(--bg-void)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '14px',
+                      borderBottom: '1px solid var(--border-subtle)',
+                      paddingBottom: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Camera size={16} />
+                        <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.85rem' }}>
+                          Biometric & Identification Documents (5 Mandatory Records)
+                        </span>
+                      </div>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {Object.values(parsedPhotos).filter(Boolean).length} / 5 ARCHIVED
+                      </span>
+                    </div>
+
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: '12px'
+                    }}>
+                      {photoSlots.map(slot => {
+                        const photoData = parsedPhotos[slot.id];
+                        return (
+                          <div
+                            key={slot.id}
+                            style={{
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: '4px',
+                              padding: '8px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              color: 'var(--text-secondary)',
+                              marginBottom: '6px',
+                              height: '28px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              lineHeight: '1.2'
+                            }}>
+                              {slot.label}
+                            </div>
+
+                            {photoData ? (
+                              <div
+                                onClick={() => setLightboxImage({
+                                  src: photoData,
+                                  title: `${selectedItem?.first_name} ${selectedItem?.last_name} — ${slot.label}`
+                                })}
+                                style={{
+                                  position: 'relative',
+                                  width: '100%',
+                                  height: '100px',
+                                  background: '#000000',
+                                  borderRadius: '2px',
+                                  overflow: 'hidden',
+                                  cursor: 'pointer',
+                                  border: '1px solid var(--border-default)'
+                                }}
+                                title="Click to view full preview"
+                              >
+                                <img
+                                  src={photoData}
+                                  alt={slot.label}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                  }}
+                                />
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  background: 'rgba(0,0,0,0.7)',
+                                  padding: '2px 0',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '4px',
+                                  fontSize: '0.65rem',
+                                  color: '#ffffff',
+                                  fontFamily: 'var(--font-mono)'
+                                }}>
+                                  <Eye size={10} /> PREVIEW
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{
+                                width: '100%',
+                                height: '100px',
+                                background: '#111111',
+                                border: '1px dashed var(--border-subtle)',
+                                borderRadius: '2px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                color: 'var(--text-muted)'
+                              }}>
+                                <Camera size={20} style={{ opacity: 0.3 }} />
+                                <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}>EMPTY</span>
+                              </div>
+                            )}
+
+                            <div style={{ marginTop: '8px' }}>
+                              {photoData ? (
+                                <span style={{
+                                  display: 'inline-block',
+                                  padding: '2px 6px',
+                                  background: '#064e3b',
+                                  border: '1px solid #059669',
+                                  borderRadius: '2px',
+                                  color: '#6ee7b7',
+                                  fontSize: '0.65rem',
+                                  fontFamily: 'var(--font-mono)',
+                                  fontWeight: 700
+                                }}>
+                                  [ ENROLLED ]
+                                </span>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-block',
+                                  padding: '2px 6px',
+                                  background: '#1c1c1c',
+                                  border: '1px solid #333333',
+                                  borderRadius: '2px',
+                                  color: '#888888',
+                                  fontSize: '0.65rem',
+                                  fontFamily: 'var(--font-mono)'
+                                }}>
+                                  [ NOT PROVIDED ]
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
@@ -1881,6 +2235,25 @@ export default function StudentManagementPage({ onNavigate }) {
               </h2>
             </div>
 
+            {modalError && (
+              <div style={{
+                background: '#200808',
+                border: '1px solid #7f1d1d',
+                color: '#f87171',
+                padding: '10px 14px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <AlertCircle size={16} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5', margin: '0 0 20px 0' }}>
               {selectedItem?._deleteType === 'assignment'
                 ? `Are you sure you want to revoke the bus seat allocation for ${selectedItem?.first_name} ${selectedItem?.last_name}?`
@@ -1903,6 +2276,100 @@ export default function StudentManagementPage({ onNavigate }) {
               >
                 {submitting ? 'REMOVING...' : '[ CONFIRM REMOVAL ]'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN LIGHTBOX PREVIEW MODAL */}
+      {lightboxImage && (
+        <div
+          onClick={() => setLightboxImage(null)}
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0, 0, 0, 0.92)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 2000,
+            cursor: 'zoom-out'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#0a0a0a',
+              border: '1px solid #333333',
+              borderRadius: '6px',
+              padding: '16px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+              cursor: 'default'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+              borderBottom: '1px solid #222222',
+              paddingBottom: '8px'
+            }}>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.85rem',
+                color: '#ffffff',
+                letterSpacing: '0.05em'
+              }}>
+                {lightboxImage.title || 'ENROLLMENT RECORD PREVIEW'}
+              </span>
+              <button
+                onClick={() => setLightboxImage(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#888888',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              maxHeight: '75vh'
+            }}>
+              <img
+                src={lightboxImage.src}
+                alt={lightboxImage.title || 'Preview'}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '75vh',
+                  objectFit: 'contain',
+                  borderRadius: '2px'
+                }}
+              />
+            </div>
+            <div style={{
+              marginTop: '10px',
+              textAlign: 'right',
+              fontSize: '0.75rem',
+              fontFamily: 'var(--font-mono)',
+              color: '#666666'
+            }}>
+              SECURE BIOMETRIC ARCHIVE • PRESS ANYWHERE OUTSIDE TO DISMISS
             </div>
           </div>
         </div>

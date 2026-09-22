@@ -1,31 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, RotateCcw } from 'lucide-react';
-
-const DIAGNOSTIC_ITEMS = [
-  { id: 'app_core', name: 'Application Core', detail: 'Runtime kernel and memory integrity' },
-  { id: 'config', name: 'Configuration', detail: 'Institutional parameters & fleet routes' },
-  { id: 'session', name: 'Session', detail: 'Cryptographic token validation & role clearance' },
-  { id: 'transport', name: 'Transport Services', detail: 'Edge telemetry gateway & stream daemon' },
-  { id: 'camera', name: 'Camera Services', detail: 'Optical stream receivers & edge hardware buffers' }
-];
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowRight, RotateCcw, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { DIAGNOSTIC_PROBES, executeSystemDiagnostics } from '../services/diagnosticService';
 
 export default function LoadingPage({ onComplete }) {
-  const [activeStep, setActiveStep] = useState(3); // default showing transport in-progress or simulating
+  const [probeStates, setProbeStates] = useState(() => {
+    const initial = {};
+    DIAGNOSTIC_PROBES.forEach(p => {
+      initial[p.id] = { id: p.id, status: 'PENDING', name: p.name, detail: p.detail };
+    });
+    return initial;
+  });
+
+  const [isRunning, setIsRunning] = useState(false);
+  const [overallStatus, setOverallStatus] = useState('INITIALIZING'); // 'INITIALIZING' | 'ALL_PASSED' | 'FAILED'
+
+  const runAllChecks = useCallback(async () => {
+    setIsRunning(true);
+    setOverallStatus('INITIALIZING');
+
+    // Reset all to pending
+    const reset = {};
+    DIAGNOSTIC_PROBES.forEach(p => {
+      reset[p.id] = { id: p.id, status: 'PENDING', name: p.name, detail: p.detail };
+    });
+    setProbeStates(reset);
+
+    const outcome = await executeSystemDiagnostics((probeId, state) => {
+      setProbeStates(prev => ({
+        ...prev,
+        [probeId]: state
+      }));
+    });
+
+    setIsRunning(false);
+    if (outcome.allPassed) {
+      setOverallStatus('ALL_PASSED');
+    } else {
+      setOverallStatus('FAILED');
+    }
+  }, []);
 
   useEffect(() => {
-    if (activeStep < DIAGNOSTIC_ITEMS.length) {
-      const timer = setTimeout(() => {
-        setActiveStep(prev => prev + 1);
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-  }, [activeStep]);
+    runAllChecks();
+  }, [runAllChecks]);
 
-  const isComplete = activeStep >= DIAGNOSTIC_ITEMS.length;
+  const passedCount = Object.values(probeStates).filter(p => p.status === 'PASSED').length;
+  const isComplete = overallStatus === 'ALL_PASSED';
 
   return (
     <div className="page-container-center">
-      <div className="mono-card" style={{ maxWidth: '580px', width: '100%', position: 'relative' }}>
+      <div className="mono-card" style={{ maxWidth: '620px', width: '100%', position: 'relative' }}>
         
         {/* Title */}
         <div style={{ borderBottom: '1px solid #222222', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
@@ -50,7 +74,7 @@ export default function LoadingPage({ onComplete }) {
             </span>
           </div>
           <div style={{ fontSize: '0.8rem', color: '#888888', marginTop: '0.25rem' }}>
-            V.S.B. Transport Telemetry Initializer
+            V.S.B. Transport Telemetry & Sensor Integrity Probes
           </div>
         </div>
 
@@ -64,55 +88,77 @@ export default function LoadingPage({ onComplete }) {
           fontFamily: 'var(--font-mono)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.9rem'
+          gap: '1rem'
         }}>
-          {DIAGNOSTIC_ITEMS.map((item, idx) => {
-            const isChecked = idx < activeStep;
-            const isProcessing = idx === activeStep;
-            const isPending = idx > activeStep;
+          {DIAGNOSTIC_PROBES.map(probe => {
+            const state = probeStates[probe.id] || { status: 'PENDING' };
+            const isChecked = state.status === 'PASSED';
+            const isChecking = state.status === 'CHECKING';
+            const isFailed = state.status === 'FAILED';
+            const isPending = state.status === 'PENDING';
 
             return (
               <div 
-                key={item.id}
+                key={probe.id}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  opacity: isPending ? 0.35 : 1,
-                  transition: 'opacity 0.3s ease'
+                  opacity: isPending ? 0.38 : 1,
+                  transition: 'opacity 0.25s ease'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
                   <span style={{
-                    color: isChecked ? '#ffffff' : isProcessing ? '#d1d1d1' : '#555555',
+                    color: isChecked ? '#ffffff' : isFailed ? '#ff4d4d' : isChecking ? '#d1d1d1' : '#555555',
                     fontWeight: 700,
                     width: '24px',
                     textAlign: 'center',
-                    fontSize: '0.95rem'
+                    fontSize: '0.95rem',
+                    fontFamily: 'var(--font-mono)',
+                    lineHeight: '1.3'
                   }}>
-                    {isChecked ? '[✓]' : isProcessing ? '[●]' : '[ ]'}
+                    {isChecked ? '[✓]' : isFailed ? '[✕]' : isChecking ? '[●]' : '[ ]'}
                   </span>
                   <div>
                     <div style={{
-                      color: isChecked ? '#e0e0e0' : isProcessing ? '#ffffff' : '#777777',
+                      color: isChecked ? '#ffffff' : isFailed ? '#ff6b6b' : isChecking ? '#ffffff' : '#777777',
                       fontSize: '0.85rem',
-                      fontWeight: isProcessing ? 700 : 500
+                      fontWeight: isChecking || isChecked ? 700 : 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}>
-                      {item.name}
+                      <span>{probe.name}</span>
+                      {state.latencyMs !== undefined && isChecked && (
+                        <span style={{ fontSize: '0.7rem', color: '#888888', fontWeight: 400 }}>
+                          ({state.latencyMs}ms)
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#666666' }}>
-                      {item.detail}
+                    <div style={{ fontSize: '0.72rem', color: '#666666', marginTop: '0.15rem' }}>
+                      {state.status === 'FAILED' ? (
+                        <span style={{ color: '#ff6666' }}>Error: {state.error || 'Check failed'}</span>
+                      ) : (
+                        probe.detail
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <span style={{
-                  fontSize: '0.7rem',
-                  letterSpacing: '0.05em',
-                  color: isChecked ? '#999999' : isProcessing ? '#ffffff' : '#444444'
-                }}>
-                  {isChecked ? 'READY' : isProcessing ? 'ACTIVE' : 'IDLE'}
-                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.05em',
+                    fontWeight: 700,
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '2px',
+                    background: isChecked ? '#1a2e1a' : isFailed ? '#331111' : isChecking ? '#222222' : 'transparent',
+                    color: isChecked ? '#4ade80' : isFailed ? '#ff4d4d' : isChecking ? '#ffffff' : '#555555'
+                  }}>
+                    {isChecked ? 'PASS' : isFailed ? 'FAIL' : isChecking ? 'PROBING' : 'WAIT'}
+                  </span>
+                </div>
               </div>
             );
           })}
@@ -121,35 +167,40 @@ export default function LoadingPage({ onComplete }) {
         {/* Status Line */}
         <div style={{
           padding: '1rem',
-          background: '#141414',
-          border: '1px solid #282828',
+          background: overallStatus === 'FAILED' ? '#1c1010' : '#141414',
+          border: `1px solid ${overallStatus === 'FAILED' ? '#442222' : '#282828'}`,
           borderRadius: 'var(--radius-sm)',
           marginBottom: '1.75rem',
           fontFamily: 'var(--font-mono)'
         }}>
           <div style={{ fontSize: '0.7rem', color: '#777777', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
-            STATUS:
+            SYSTEM INTEGRITY REPORT ({passedCount}/{DIAGNOSTIC_PROBES.length} PASS):
           </div>
           <div style={{
-            fontSize: '0.9rem',
+            fontSize: '0.85rem',
             fontWeight: 700,
-            color: '#ffffff',
-            letterSpacing: '0.08em',
+            color: overallStatus === 'FAILED' ? '#ff6b6b' : '#ffffff',
+            letterSpacing: '0.05em',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            {!isComplete && (
-              <span style={{
-                display: 'inline-block',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#ffffff',
-                animation: 'pulse 1.2s infinite ease-in-out'
-              }} />
+            {isRunning && (
+              <RefreshCw size={14} className="spin" style={{ color: '#ffffff' }} />
             )}
-            {isComplete ? 'ALL SYSTEMS NOMINAL. READY FOR OPERATION.' : 'INITIALIZING SYSTEM...'}
+            {overallStatus === 'ALL_PASSED' && (
+              <CheckCircle2 size={16} style={{ color: '#4ade80' }} />
+            )}
+            {overallStatus === 'FAILED' && (
+              <AlertTriangle size={16} style={{ color: '#ff4d4d' }} />
+            )}
+            <span>
+              {overallStatus === 'ALL_PASSED'
+                ? 'ALL SUBSYSTEMS NOMINAL. READY FOR OPERATION.'
+                : overallStatus === 'FAILED'
+                ? 'SYSTEM INITIALIZATION FAILURE. PLEASE RETRY OR VERIFY BACKEND.'
+                : 'PROBING LIVE TELEMETRY & GATEWAYS...'}
+            </span>
           </div>
         </div>
 
@@ -158,24 +209,28 @@ export default function LoadingPage({ onComplete }) {
           <button
             type="button"
             className="mono-btn"
-            onClick={() => setActiveStep(0)}
+            onClick={runAllChecks}
+            disabled={isRunning}
             style={{ padding: '0.65rem 1.25rem' }}
           >
-            <RotateCcw size={14} />
-            <span>Re-run Diagnostic</span>
+            <RotateCcw size={14} className={isRunning ? 'spin' : ''} />
+            <span>{isRunning ? 'Probing...' : 'Re-run Diagnostics'}</span>
           </button>
 
-          {isComplete && (
-            <button
-              type="button"
-              className="mono-btn mono-btn-primary"
-              onClick={onComplete}
-              style={{ padding: '0.65rem 1.4rem' }}
-            >
-              <span>Proceed to Portal</span>
-              <ArrowRight size={14} />
-            </button>
-          )}
+          <button
+            type="button"
+            className="mono-btn mono-btn-primary"
+            onClick={onComplete}
+            disabled={!isComplete || isRunning}
+            style={{
+              padding: '0.65rem 1.4rem',
+              opacity: isComplete ? 1 : 0.45,
+              cursor: isComplete ? 'pointer' : 'not-allowed'
+            }}
+          >
+            <span>Proceed to Portal</span>
+            <ArrowRight size={14} />
+          </button>
         </div>
       </div>
     </div>
