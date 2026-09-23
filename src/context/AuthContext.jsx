@@ -79,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     loginStep1,
     loginStep2,
     googleLogin,
+    loginWithGoogle: googleLogin,
     forgotPassword,
     resetPassword,
     register,

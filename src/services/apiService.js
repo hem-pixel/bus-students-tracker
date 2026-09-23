@@ -370,6 +370,31 @@ export const apiService = {
     getEscalations: () => request('/alerts/escalations'),
     acknowledge: (alertId) => request(`/alerts/${alertId}/acknowledge`, { method: 'POST' }),
     override: (alertId, data) => request(`/alerts/${alertId}/override`, { method: 'POST', body: JSON.stringify(data) })
+  },
+
+  // Wrong Stop Detection & Alerts (Phase 10)
+  stopDetection: {
+    assignStops: (data) => request('/stop-detection/assign-stops', { method: 'POST', body: JSON.stringify(data) }),
+    getStudentAssignments: (studentId) => request(`/stop-detection/student-assignments/${studentId}`),
+    getAssignments: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/stop-detection/assignments${qs ? `?${qs}` : ''}`);
+    },
+    checkBoarding: (data) => request('/stop-detection/check-boarding', { method: 'POST', body: JSON.stringify(data) }),
+    getDetections: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/stop-detection/detections${qs ? `?${qs}` : ''}`);
+    },
+    getAlerts: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/stop-detection/alerts${qs ? `?${qs}` : ''}`);
+    },
+    resolveDetection: (id, data) => request(`/stop-detection/detections/${id}/resolve`, { method: 'PUT', body: JSON.stringify(data) }),
+    dismissAlert: (id, data) => request(`/stop-detection/alerts/${id}/dismiss`, { method: 'PUT', body: JSON.stringify(data) }),
+    getStats: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/stop-detection/stats${qs ? `?${qs}` : ''}`);
+    }
   }
 };
 
@@ -386,5 +411,6 @@ export const verificationAPI = apiService.verification;
 export const modelPerformanceAPI = apiService.modelPerformance;
 export const boardingAPI = apiService.boarding;
 export const alertsAPI = apiService.alerts;
+export const stopDetectionAPI = apiService.stopDetection;
 
 

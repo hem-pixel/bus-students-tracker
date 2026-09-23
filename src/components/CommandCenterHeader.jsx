@@ -216,7 +216,7 @@ export default function CommandCenterHeader({
               <span>LOGOUT</span>
             </button>
           </div>
-        ) : currentPage !== 'opening' ? (
+        ) : !['opening', 'loading', 'login'].includes(currentPage) ? (
           <button
             onClick={() => onNavigate && onNavigate('login')}
             className="mono-btn mono-btn-primary"

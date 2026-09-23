@@ -167,6 +167,7 @@ export const authService = {
 
       try {
         sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
       } catch (e) {}
 
       return { user, token, expiresAt: sessionData.expiresAt };
@@ -202,7 +203,10 @@ export const authService = {
       };
 
       const sessionData = { token: sessionToken, expiresAt, user: safeUser };
-      sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+      try {
+        sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+      } catch (e) {}
 
       return { user: safeUser, token: sessionToken, expiresAt };
     }
@@ -289,6 +293,7 @@ export const authService = {
 
       try {
         sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
       } catch (e) {}
 
       return { user, token, expiresAt: sessionData.expiresAt };
@@ -296,17 +301,34 @@ export const authService = {
       if (netErr.message && !netErr.message.includes('Failed to fetch')) {
         throw netErr;
       }
-      // Offline fallback: Use default student account
-      const safeUser = DEFAULT_ACCOUNTS.find(u => u.role === 'STUDENT');
+      // Offline fallback: Use matched institutional account or default admin
+      const targetEmail = (googleData?.email || '').toLowerCase().trim();
+      const allUsers = [...DEFAULT_ACCOUNTS, ...getRegisteredUsers()];
+      let safeUser = allUsers.find(u => u.email.toLowerCase() === targetEmail);
+      if (!safeUser) {
+        const targetRole = (googleData?.role || 'ADMIN').toUpperCase().replace('ADMINISTRATOR', 'ADMIN');
+        safeUser = DEFAULT_ACCOUNTS.find(u => u.role === targetRole) || DEFAULT_ACCOUNTS[0];
+      }
+
       const sessionToken = generateSessionToken(safeUser.id, safeUser.role);
       const sessionData = {
         token: sessionToken,
         expiresAt: Date.now() + SESSION_DURATION_MS,
         user: safeUser
       };
-      sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+      try {
+        sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+      } catch (e) {}
       return { user: safeUser, token: sessionToken, expiresAt: sessionData.expiresAt };
     }
+  },
+
+  /**
+   * Google Sign-In Alias
+   */
+  async loginWithGoogle(googleData) {
+    return this.googleSignIn(googleData);
   },
 
   /**
@@ -336,6 +358,7 @@ export const authService = {
           };
           try {
             sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+            localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
           } catch (e) {}
 
           return {
@@ -399,6 +422,7 @@ export const authService = {
 
         try {
           sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
+          localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sessionData));
         } catch (e) {
           // Fallback if sessionStorage fails
         }
@@ -461,11 +485,15 @@ export const authService = {
           rollNumber: newUser.rollNumber
         };
 
-        sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify({
+        const regSessionData = {
           token: sessionToken,
           expiresAt,
           user: safeUser
-        }));
+        };
+        try {
+          sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(regSessionData));
+          localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(regSessionData));
+        } catch (e) {}
 
         resolve({
           user: safeUser,
@@ -481,7 +509,10 @@ export const authService = {
    */
   getCurrentSession() {
     try {
-      const raw = sessionStorage.getItem(STORAGE_SESSION_KEY);
+      let raw = sessionStorage.getItem(STORAGE_SESSION_KEY);
+      if (!raw) {
+        raw = localStorage.getItem(STORAGE_SESSION_KEY);
+      }
       if (!raw) return null;
 
       const session = JSON.parse(raw);
@@ -501,8 +532,9 @@ export const authService = {
   logout() {
     try {
       sessionStorage.removeItem(STORAGE_SESSION_KEY);
-    } catch (e) {
-      // Ignored
-    }
+    } catch (e) {}
+    try {
+      localStorage.removeItem(STORAGE_SESSION_KEY);
+    } catch (e) {}
   }
 };

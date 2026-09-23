@@ -1873,7 +1873,232 @@ function initFallbackStore() {
     ],
     alerts: [],
     alert_notifications: [],
-    anomaly_escalations: []
+    anomaly_escalations: [],
+    stop_assignments: [
+      {
+        id: 'sa100000-0000-0000-0000-000000000001',
+        student_id: 'st100000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        pickup_stop_id: 's1000000-0000-0000-0000-000000000001',
+        dropoff_stop_id: 's1000000-0000-0000-0000-000000000005',
+        assigned_bus_id: 'b1000000-0000-0000-0000-000000000001',
+        effective_date: '2025-01-01',
+        status: 'ACTIVE',
+        notes: 'Primary morning pickup at Karur Central',
+        created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+        updated_at: new Date(Date.now() - 86400000 * 30).toISOString()
+      },
+      {
+        id: 'sa100000-0000-0000-0000-000000000002',
+        student_id: 'st100000-0000-0000-0000-000000000002',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        pickup_stop_id: 's1000000-0000-0000-0000-000000000002',
+        dropoff_stop_id: 's1000000-0000-0000-0000-000000000005',
+        assigned_bus_id: 'b1000000-0000-0000-0000-000000000001',
+        effective_date: '2025-01-01',
+        status: 'ACTIVE',
+        notes: 'Thanthonimalai cluster boarding',
+        created_at: new Date(Date.now() - 86400000 * 25).toISOString(),
+        updated_at: new Date(Date.now() - 86400000 * 25).toISOString()
+      },
+      {
+        id: 'sa100000-0000-0000-0000-000000000003',
+        student_id: 'st100000-0000-0000-0000-000000000003',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        pickup_stop_id: 's1000000-0000-0000-0000-000000000003',
+        dropoff_stop_id: 's1000000-0000-0000-0000-000000000005',
+        assigned_bus_id: 'b1000000-0000-0000-0000-000000000001',
+        effective_date: '2025-01-01',
+        status: 'ACTIVE',
+        notes: 'Rayanur Junction highway boarding',
+        created_at: new Date(Date.now() - 86400000 * 20).toISOString(),
+        updated_at: new Date(Date.now() - 86400000 * 20).toISOString()
+      },
+      {
+        id: 'sa100000-0000-0000-0000-000000000004',
+        student_id: 'st100000-0000-0000-0000-000000000004',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        pickup_stop_id: 's1000000-0000-0000-0000-000000000004',
+        dropoff_stop_id: 's1000000-0000-0000-0000-000000000005',
+        assigned_bus_id: 'b1000000-0000-0000-0000-000000000001',
+        effective_date: '2025-01-01',
+        status: 'ACTIVE',
+        notes: 'Gandhigramam Roundana stop',
+        created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
+        updated_at: new Date(Date.now() - 86400000 * 15).toISOString()
+      },
+      {
+        id: 'sa100000-0000-0000-0000-000000000005',
+        student_id: 'st100000-0000-0000-0000-000000000005',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        pickup_stop_id: 's1000000-0000-0000-0000-000000000001',
+        dropoff_stop_id: 's1000000-0000-0000-0000-000000000005',
+        assigned_bus_id: 'b1000000-0000-0000-0000-000000000001',
+        effective_date: '2025-01-01',
+        status: 'ACTIVE',
+        notes: 'Karur Central Bay 4',
+        created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
+        updated_at: new Date(Date.now() - 86400000 * 10).toISOString()
+      }
+    ],
+    stop_events: [
+      {
+        id: 'se100000-0000-0000-0000-000000000001',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        stop_id: 's1000000-0000-0000-0000-000000000001',
+        arrival_time: new Date(Date.now() - 7200000).toISOString(),
+        departure_time: new Date(Date.now() - 7020000).toISOString(),
+        stop_sequence: 1,
+        dwell_time_seconds: 180,
+        gps_lat: 10.95740000,
+        gps_lng: 78.08150000,
+        created_at: new Date(Date.now() - 7200000).toISOString()
+      },
+      {
+        id: 'se100000-0000-0000-0000-000000000002',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        stop_id: 's1000000-0000-0000-0000-000000000002',
+        arrival_time: new Date(Date.now() - 5400000).toISOString(),
+        departure_time: new Date(Date.now() - 5280000).toISOString(),
+        stop_sequence: 2,
+        dwell_time_seconds: 120,
+        gps_lat: 10.93200000,
+        gps_lng: 78.08640000,
+        created_at: new Date(Date.now() - 5400000).toISOString()
+      },
+      {
+        id: 'se100000-0000-0000-0000-000000000003',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        stop_id: 's1000000-0000-0000-0000-000000000003',
+        arrival_time: new Date(Date.now() - 3600000).toISOString(),
+        departure_time: new Date(Date.now() - 3480000).toISOString(),
+        stop_sequence: 3,
+        dwell_time_seconds: 120,
+        gps_lat: 10.91500000,
+        gps_lng: 78.08900000,
+        created_at: new Date(Date.now() - 3600000).toISOString()
+      }
+    ],
+    wrong_stop_detections: [
+      {
+        id: 'wsd-10000000-0000-0000-0000-000000000001',
+        student_id: 'st100000-0000-0000-0000-000000000001',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        event_type: 'BOARDING',
+        detected_stop_id: 's1000000-0000-0000-0000-000000000002',
+        assigned_stop_id: 's1000000-0000-0000-0000-000000000001',
+        detected_time: new Date(Date.now() - 5400000).toISOString(),
+        distance_from_assigned_meters: 2840,
+        stop_sequence_delta: 1,
+        severity: 'MEDIUM',
+        status: 'OPEN',
+        resolution_notes: null,
+        resolved_by: null,
+        resolved_at: null,
+        created_at: new Date(Date.now() - 5400000).toISOString(),
+        updated_at: new Date(Date.now() - 5400000).toISOString()
+      },
+      {
+        id: 'wsd-10000000-0000-0000-0000-000000000002',
+        student_id: 'st100000-0000-0000-0000-000000000005',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        event_type: 'BOARDING',
+        detected_stop_id: 's1000000-0000-0000-0000-000000000003',
+        assigned_stop_id: 's1000000-0000-0000-0000-000000000001',
+        detected_time: new Date(Date.now() - 3600000).toISOString(),
+        distance_from_assigned_meters: 4720,
+        stop_sequence_delta: 2,
+        severity: 'HIGH',
+        status: 'INVESTIGATING',
+        resolution_notes: 'Driver notified; student reported missing designated stop due to heavy rain.',
+        resolved_by: null,
+        resolved_at: null,
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+        updated_at: new Date(Date.now() - 1800000).toISOString()
+      },
+      {
+        id: 'wsd-10000000-0000-0000-0000-000000000003',
+        student_id: 'st100000-0000-0000-0000-000000000003',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        event_type: 'ALIGHTING',
+        detected_stop_id: 's1000000-0000-0000-0000-000000000002',
+        assigned_stop_id: 's1000000-0000-0000-0000-000000000005',
+        detected_time: new Date(Date.now() - 86400000).toISOString(),
+        distance_from_assigned_meters: 6100,
+        stop_sequence_delta: -3,
+        severity: 'CRITICAL',
+        status: 'RESOLVED',
+        resolution_notes: 'Parent requested early dropoff for doctor consultation. Verified via parent phone call.',
+        resolved_by: 'ADMIN-SECURITY-CHIEF',
+        resolved_at: new Date(Date.now() - 82800000).toISOString(),
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        updated_at: new Date(Date.now() - 82800000).toISOString()
+      }
+    ],
+    stop_detection_alerts: [
+      {
+        id: 'sda-10000000-0000-0000-0000-000000000001',
+        detection_id: 'wsd-10000000-0000-0000-0000-000000000001',
+        alert_type: 'WRONG_STOP_BOARDING',
+        severity: 'WARNING',
+        title: 'Wrong Pickup Stop: Aravind Kumar (922521104015)',
+        message: 'Student boarded at Thanthonimalai instead of assigned stop Karur Central Bus Stand (Bay 4). Distance mismatch: 2.8 km.',
+        channels: '["SMS", "IN_APP"]',
+        dismissed: false,
+        dismissed_by: null,
+        dismissed_at: null,
+        created_at: new Date(Date.now() - 5400000).toISOString()
+      },
+      {
+        id: 'sda-10000000-0000-0000-0000-000000000002',
+        detection_id: 'wsd-10000000-0000-0000-0000-000000000002',
+        alert_type: 'WRONG_STOP_BOARDING',
+        severity: 'CRITICAL',
+        title: 'Severe Stop Mismatch: Praveen N (922521104050)',
+        message: 'Student boarded at Rayanur Junction (+2 stops away, 4.7 km). Immediate verification required.',
+        channels: '["SMS", "IN_APP", "PUSH"]',
+        dismissed: false,
+        dismissed_by: null,
+        dismissed_at: null,
+        created_at: new Date(Date.now() - 3600000).toISOString()
+      }
+    ],
+    stop_performance_log: [
+      {
+        id: 'spl-10000000-0000-0000-0000-000000000001',
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        log_date: new Date().toISOString().split('T')[0],
+        total_stops_scheduled: 5,
+        total_stops_serviced: 5,
+        skipped_stops_count: 0,
+        wrong_stop_events_count: 2,
+        on_time_stops_count: 4,
+        average_dwell_time_seconds: 140,
+        compliance_rate: 96.0,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'spl-10000000-0000-0000-0000-000000000002',
+        bus_id: 'b1000000-0000-0000-0000-000000000002',
+        route_id: 'r1000000-0000-0000-0000-000000000003',
+        log_date: new Date().toISOString().split('T')[0],
+        total_stops_scheduled: 6,
+        total_stops_serviced: 6,
+        skipped_stops_count: 0,
+        wrong_stop_events_count: 0,
+        on_time_stops_count: 6,
+        average_dwell_time_seconds: 110,
+        compliance_rate: 100.0,
+        created_at: new Date().toISOString()
+      }
+    ]
   };
 
   return fallbackStore;
@@ -1919,6 +2144,14 @@ const db = {
 // Simple query parsing for all tables when running in fallback mode
 function executeFallbackQuery(store, sql, params = []) {
   const normalized = sql.trim().replace(/\s+/g, ' ');
+
+  // Ping / health check queries
+  if (/^SELECT\s+(?:1|NOW\(\)|CURRENT_TIMESTAMP)/i.test(normalized)) {
+    return {
+      rows: [{ ping: 1, '?column?': 1, now: new Date().toISOString() }],
+      rowCount: 1
+    };
+  }
 
   // Multi-COUNT summary query for boarding attendance
   if (/FROM\s+student_attendance_log/i.test(normalized) && /verified_boardings|completed_boardings/i.test(normalized)) {
@@ -2385,6 +2618,82 @@ function executeFallbackQuery(store, sql, params = []) {
           actor_role: user ? user.role : 'SYSTEM'
         };
       });
+    } else if (tableName === 'stop_assignments') {
+      rows = rows.map(sa => {
+        const st = (store.students || []).find(s => s.student_id === sa.student_id);
+        const rt = (store.routes || []).find(r => r.route_id === sa.route_id);
+        const pStop = (store.stops || []).find(s => s.stop_id === sa.pickup_stop_id);
+        const dStop = (store.stops || []).find(s => s.stop_id === sa.dropoff_stop_id);
+        const bus = (store.buses || []).find(b => b.bus_id === sa.assigned_bus_id);
+        return {
+          ...sa,
+          student_name: st ? `${st.first_name} ${st.last_name}` : 'Unknown Student',
+          roll_number: st ? st.roll_number : '',
+          department: st ? st.department : '',
+          year: st ? st.year : '',
+          phone: st ? st.phone : '',
+          route_name: rt ? rt.route_name : 'Default Route',
+          route_number: rt ? rt.route_number : '',
+          pickup_stop_name: pStop ? pStop.stop_name : 'Unknown Stop',
+          pickup_stop_sequence: pStop ? pStop.stop_sequence : 0,
+          dropoff_stop_name: dStop ? dStop.stop_name : 'Unknown Stop',
+          dropoff_stop_sequence: dStop ? dStop.stop_sequence : 0,
+          bus_number: bus ? bus.bus_number : 'BUS-14',
+          registration_plate: bus ? bus.registration_plate : 'TN 47 AJ 8914'
+        };
+      });
+    } else if (tableName === 'wrong_stop_detections') {
+      rows = rows.map(wsd => {
+        const st = (store.students || []).find(s => s.student_id === wsd.student_id);
+        const bus = (store.buses || []).find(b => b.bus_id === wsd.bus_id);
+        const rt = (store.routes || []).find(r => r.route_id === wsd.route_id);
+        const dStop = (store.stops || []).find(s => s.stop_id === wsd.detected_stop_id);
+        const aStop = (store.stops || []).find(s => s.stop_id === wsd.assigned_stop_id);
+        return {
+          ...wsd,
+          student_name: st ? `${st.first_name} ${st.last_name}` : 'Unknown Student',
+          roll_number: st ? st.roll_number : '',
+          department: st ? st.department : '',
+          bus_number: bus ? bus.bus_number : 'BUS-14',
+          registration_plate: bus ? bus.registration_plate : 'TN 47 AJ 8914',
+          route_name: rt ? rt.route_name : 'Route 1',
+          detected_stop_name: dStop ? dStop.stop_name : (wsd.detected_stop_name || 'Detected Stop'),
+          detected_stop_sequence: dStop ? dStop.stop_sequence : 0,
+          assigned_stop_name: aStop ? aStop.stop_name : (wsd.assigned_stop_name || 'Assigned Stop'),
+          assigned_stop_sequence: aStop ? aStop.stop_sequence : 0
+        };
+      });
+    } else if (tableName === 'stop_detection_alerts') {
+      rows = rows.map(sda => {
+        const det = (store.wrong_stop_detections || []).find(d => d.id === sda.detection_id);
+        const st = det ? (store.students || []).find(s => s.student_id === det.student_id) : null;
+        const bus = det ? (store.buses || []).find(b => b.bus_id === det.bus_id) : null;
+        const dStop = det ? (store.stops || []).find(s => s.stop_id === det.detected_stop_id) : null;
+        const aStop = det ? (store.stops || []).find(s => s.stop_id === det.assigned_stop_id) : null;
+        return {
+          ...sda,
+          student_name: st ? `${st.first_name} ${st.last_name}` : 'Student',
+          roll_number: st ? st.roll_number : '',
+          bus_number: bus ? bus.bus_number : 'BUS-14',
+          detected_stop_name: dStop ? dStop.stop_name : 'Detected Stop',
+          assigned_stop_name: aStop ? aStop.stop_name : 'Assigned Stop',
+          event_type: det ? det.event_type : 'BOARDING',
+          mismatch_type: det ? det.mismatch_type : 'WRONG_STOP'
+        };
+      });
+    } else if (tableName === 'stop_events') {
+      rows = rows.map(se => {
+        const bus = (store.buses || []).find(b => b.bus_id === se.bus_id);
+        const rt = (store.routes || []).find(r => r.route_id === se.route_id);
+        const stop = (store.stops || []).find(s => s.stop_id === se.stop_id);
+        return {
+          ...se,
+          bus_number: bus ? bus.bus_number : 'BUS-14',
+          route_name: rt ? rt.route_name : 'Route 1',
+          stop_name: stop ? stop.stop_name : 'Stop',
+          stop_sequence: stop ? stop.stop_sequence : 0
+        };
+      });
     }
 
     // WHERE clause handling
@@ -2499,6 +2808,8 @@ function executeFallbackQuery(store, sql, params = []) {
     // ORDER BY handling
     if (/ORDER\s+BY\s+.*stop_sequence/i.test(normalized)) {
       rows.sort((a, b) => (a.stop_sequence || 0) - (b.stop_sequence || 0));
+    } else if (/ORDER\s+BY\s+.*detected_at/i.test(normalized)) {
+      rows.sort((a, b) => new Date(b.detected_at || b.created_at || 0) - new Date(a.detected_at || a.created_at || 0));
     } else if (/ORDER\s+BY\s+.*boarding_time/i.test(normalized)) {
       rows.sort((a, b) => new Date(b.boarding_time || b.created_at || 0) - new Date(a.boarding_time || a.created_at || 0));
     } else if (/ORDER\s+BY\s+.*recognition_timestamp/i.test(normalized)) {
@@ -2585,7 +2896,12 @@ function executeFallbackQuery(store, sql, params = []) {
       recognition_audit_log: 'audit_id',
       alerts: 'id',
       alert_notifications: 'id',
-      anomaly_escalations: 'id'
+      anomaly_escalations: 'id',
+      stop_assignments: 'id',
+      stop_events: 'id',
+      wrong_stop_detections: 'id',
+      stop_detection_alerts: 'id',
+      stop_performance_log: 'id'
     };
     const idKey = idKeyMap[tableName] || 'id';
 

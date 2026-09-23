@@ -17,7 +17,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Radio,
-  ExternalLink
+  ExternalLink,
+  MapPin,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -88,6 +90,14 @@ export default function AppSidebar({
           shortLabel: 'CAMERAS',
           icon: Camera,
           roles: ['ADMIN', 'TRANSPORT_STAFF']
+        },
+        {
+          id: 'stop-assignment',
+          aliases: ['admin/stop-assignment', 'admin/stop-allocations'],
+          label: 'Stop Allocation',
+          shortLabel: 'STOPS',
+          icon: MapPin,
+          roles: ['ADMIN', 'TRANSPORT_STAFF']
         }
       ]
     },
@@ -117,6 +127,15 @@ export default function AppSidebar({
           shortLabel: 'BOARDING',
           icon: Shield,
           roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']
+        },
+        {
+          id: 'wrong-stop-detection',
+          aliases: ['admin/wrong-stop-detection', 'admin/stop-alerts'],
+          label: 'Wrong Stop Alerts',
+          shortLabel: 'STOP ALERTS',
+          icon: ShieldAlert,
+          roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE'],
+          badge: 'LIVE'
         }
       ]
     }

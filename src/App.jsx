@@ -32,6 +32,8 @@ import DriverVerificationDashboard from './pages/admin/DriverVerificationDashboa
 import BiometricEnrollmentPage from './pages/admin/BiometricEnrollmentPage';
 import BoardingVerificationDashboard from './pages/admin/BoardingVerificationDashboard';
 import AlertsDashboard from './pages/admin/AlertsDashboard';
+import StopAssignmentPage from './pages/admin/StopAssignmentPage';
+import WrongStopDetectionDashboard from './pages/admin/WrongStopDetectionDashboard';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('opening');
@@ -221,6 +223,32 @@ function AppContent() {
           </ProtectedRoute>
         );
 
+      case 'stop-assignment':
+      case 'admin/stop-assignment':
+      case 'admin/stop-allocations':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <StopAssignmentPage onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'wrong-stop-detection':
+      case 'admin/wrong-stop-detection':
+      case 'admin/stop-alerts':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <WrongStopDetectionDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
       case 'admin':
         return (
           <ProtectedRoute 
@@ -228,7 +256,7 @@ function AppContent() {
             onNavigateToLogin={() => setCurrentPage('login')}
             onNavigate={setCurrentPage}
           >
-            <RoleLandingPage onNavigate={setCurrentPage} />
+            <UnifiedDashboard onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 
@@ -239,7 +267,7 @@ function AppContent() {
             onNavigateToLogin={() => setCurrentPage('login')}
             onNavigate={setCurrentPage}
           >
-            <RoleLandingPage onNavigate={setCurrentPage} />
+            <UnifiedDashboard onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 
@@ -250,7 +278,7 @@ function AppContent() {
             onNavigateToLogin={() => setCurrentPage('login')}
             onNavigate={setCurrentPage}
           >
-            <RoleLandingPage onNavigate={setCurrentPage} />
+            <UnifiedDashboard onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 
@@ -261,7 +289,7 @@ function AppContent() {
             onNavigateToLogin={() => setCurrentPage('login')}
             onNavigate={setCurrentPage}
           >
-            <RoleLandingPage onNavigate={setCurrentPage} />
+            <UnifiedDashboard onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 
@@ -272,7 +300,7 @@ function AppContent() {
             onNavigateToLogin={() => setCurrentPage('login')}
             onNavigate={setCurrentPage}
           >
-            <RoleLandingPage onNavigate={setCurrentPage} />
+            <UnifiedDashboard onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 
