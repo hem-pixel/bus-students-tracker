@@ -34,6 +34,9 @@ import BoardingVerificationDashboard from './pages/admin/BoardingVerificationDas
 import AlertsDashboard from './pages/admin/AlertsDashboard';
 import StopAssignmentPage from './pages/admin/StopAssignmentPage';
 import WrongStopDetectionDashboard from './pages/admin/WrongStopDetectionDashboard';
+import LiveMapDashboard from './pages/admin/LiveMapDashboard';
+import RouteProgressDashboard from './pages/admin/RouteProgressDashboard';
+import LiveAnalyticsDashboard from './pages/admin/LiveAnalyticsDashboard';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('opening');
@@ -246,6 +249,46 @@ function AppContent() {
             onNavigate={setCurrentPage}
           >
             <WrongStopDetectionDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'live-map':
+      case 'admin/live-map':
+      case 'tracking':
+      case 'live-tracking':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE', 'STUDENT']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <LiveMapDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'route-progress':
+      case 'admin/route-progress':
+      case 'progress':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <RouteProgressDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'live-analytics':
+      case 'admin/live-analytics':
+      case 'transit-analytics':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <LiveAnalyticsDashboard onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 

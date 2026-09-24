@@ -395,6 +395,22 @@ export const apiService = {
       const qs = new URLSearchParams(params).toString();
       return request(`/stop-detection/stats${qs ? `?${qs}` : ''}`);
     }
+  },
+
+  // Live Transport Monitoring & GPS Tracking (Phase 11)
+  liveTransport: {
+    recordLocation: (data) => request('/live/location', { method: 'POST', body: JSON.stringify(data) }),
+    getBusLocation: (busId) => request(`/live/location/${busId}`),
+    getAllBusLocations: () => request('/live/locations'),
+    getRouteProgress: (routeId) => request(`/live/progress/${routeId}`),
+    updateRouteProgress: (data) => request('/live/progress', { method: 'POST', body: JSON.stringify(data) }),
+    getRouteETAs: (routeId) => request(`/live/eta/${routeId}`),
+    getDeviations: () => request('/live/deviations'),
+    getMapData: () => request('/live/map-data'),
+    getLiveAnalytics: () => request('/live/analytics'),
+    getPassengerFlow: (busId) => request(`/live/passenger-flow/${busId}`),
+    simulateStep: (data) => request('/live/simulate/step', { method: 'POST', body: JSON.stringify(data) }),
+    calculateDailyMetrics: (data) => request('/live/metrics/daily', { method: 'POST', body: JSON.stringify(data) })
   }
 };
 
@@ -412,5 +428,6 @@ export const modelPerformanceAPI = apiService.modelPerformance;
 export const boardingAPI = apiService.boarding;
 export const alertsAPI = apiService.alerts;
 export const stopDetectionAPI = apiService.stopDetection;
+export const liveTransportAPI = apiService.liveTransport;
 
 

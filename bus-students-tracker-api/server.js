@@ -5,6 +5,10 @@ const db = require('./config/database');
 const pool = db.pool || db;
 const errorHandler = require('./middleware/errorHandler');
 
+const http = require('http');
+const { Server } = require('socket.io');
+const websocketService = require('./services/websocketService');
+
 // Route imports
 const authRoutes = require('./routes/auth');
 const busRoutes = require('./routes/buses');
@@ -34,8 +38,21 @@ const modelRoutes = require('./routes/models');
 const boardingRoutes = require('./routes/boarding');
 const alertRoutes = require('./routes/alerts');
 const stopDetectionRoutes = require('./routes/stopDetection');
+const liveTransportRoutes = require('./routes/liveTransport');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  }
+});
+websocketService.initialize(io);
+
+app.server = server;
+app.io = io;
+
 const PORT = process.env.PORT || 5000;
 
 // Core Middleware
@@ -217,6 +234,8 @@ app.use('/api/alerts', alertRoutes);
 console.log('[SERVER] ✅ Alert management routes registered');
 app.use('/api/stop-detection', stopDetectionRoutes);
 console.log('[SERVER] ✅ Wrong stop detection & alerts routes registered');
+app.use('/api/live', liveTransportRoutes);
+console.log('[SERVER] ✅ Live transport monitoring & GPS tracking routes registered');
 
 // 404 for undefined routes
 app.use((req, res) => {
@@ -231,11 +250,13 @@ app.use(errorHandler);
 
 // Start server
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`[BST API] Server initialized on port ${PORT}`);
     console.log(`[BST API] Institution: V.S.B ENGINEERING COLLEGE`);
     console.log(`[BST API] Health check: http://localhost:${PORT}/api/health`);
+    console.log(`[BST API] WebSocket Gateway: Socket.io listening on port ${PORT}`);
   });
 }
 
+app.server = server;
 module.exports = app;

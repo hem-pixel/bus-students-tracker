@@ -19,7 +19,9 @@ import {
   Radio,
   ExternalLink,
   MapPin,
-  ShieldAlert
+  ShieldAlert,
+  Route,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -53,6 +55,36 @@ export default function AppSidebar({
           shortLabel: 'ALERTS',
           icon: AlertTriangle,
           roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']
+        }
+      ]
+    },
+    {
+      groupTitle: 'LIVE TRANSIT & TELEMETRY',
+      items: [
+        {
+          id: 'live-map',
+          aliases: ['admin/live-map', 'tracking', 'live-tracking'],
+          label: 'Live Radar Map',
+          shortLabel: 'RADAR MAP',
+          icon: Radio,
+          roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE', 'STUDENT'],
+          badge: 'LIVE'
+        },
+        {
+          id: 'route-progress',
+          aliases: ['admin/route-progress', 'progress'],
+          label: 'Route Progress',
+          shortLabel: 'PROGRESS',
+          icon: Route,
+          roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']
+        },
+        {
+          id: 'live-analytics',
+          aliases: ['admin/live-analytics', 'transit-analytics'],
+          label: 'Transit Analytics',
+          shortLabel: 'ANALYTICS',
+          icon: TrendingUp,
+          roles: ['ADMIN', 'TRANSPORT_STAFF']
         }
       ]
     },

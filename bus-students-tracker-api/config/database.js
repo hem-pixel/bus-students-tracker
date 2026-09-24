@@ -2098,6 +2098,87 @@ function initFallbackStore() {
         compliance_rate: 100.0,
         created_at: new Date().toISOString()
       }
+    ],
+    bus_gps_locations: [
+      {
+        id: 1,
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        latitude: 10.9320,
+        longitude: 78.0864,
+        accuracy_meters: 4.2,
+        speed_kmh: 38.5,
+        heading_degrees: 175.0,
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 2,
+        bus_id: 'b1000000-0000-0000-0000-000000000002',
+        latitude: 10.9150,
+        longitude: 78.0890,
+        accuracy_meters: 5.0,
+        speed_kmh: 42.0,
+        heading_degrees: 182.0,
+        timestamp: new Date().toISOString()
+      }
+    ],
+    route_progress: [
+      {
+        id: 1,
+        bus_id: 'b1000000-0000-0000-0000-000000000001',
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        current_stop_id: 's1000000-0000-0000-0000-000000000002',
+        next_stop_id: 's1000000-0000-0000-0000-000000000003',
+        stops_completed: 2,
+        total_stops: 5,
+        estimated_arrival_next_stop: new Date(Date.now() + 8 * 60000).toISOString(),
+        on_schedule: true,
+        delay_minutes: 0,
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        bus_id: 'b1000000-0000-0000-0000-000000000002',
+        route_id: 'r1000000-0000-0000-0000-000000000002',
+        current_stop_id: 's1000000-0000-0000-0000-000000000003',
+        next_stop_id: 's1000000-0000-0000-0000-000000000004',
+        stops_completed: 3,
+        total_stops: 5,
+        estimated_arrival_next_stop: new Date(Date.now() + 5 * 60000).toISOString(),
+        on_schedule: true,
+        delay_minutes: 1,
+        updated_at: new Date().toISOString()
+      }
+    ],
+    live_eta_cache: [
+      {
+        id: 1,
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        stop_id: 's1000000-0000-0000-0000-000000000003',
+        estimated_arrival: new Date(Date.now() + 8 * 60000).toISOString(),
+        confidence_percent: 92.0,
+        last_updated: new Date().toISOString()
+      },
+      {
+        id: 2,
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        stop_id: 's1000000-0000-0000-0000-000000000005',
+        estimated_arrival: new Date(Date.now() + 22 * 60000).toISOString(),
+        confidence_percent: 88.5,
+        last_updated: new Date().toISOString()
+      }
+    ],
+    route_performance_metrics: [
+      {
+        id: 1,
+        route_id: 'r1000000-0000-0000-0000-000000000001',
+        date: new Date().toISOString().split('T')[0],
+        average_delay_minutes: 1.2,
+        on_time_percentage: 95.5,
+        passenger_count: 52,
+        fuel_consumed_liters: 14.5,
+        total_distance_km: 26.8,
+        created_at: new Date().toISOString()
+      }
     ]
   };
 
@@ -2901,7 +2982,11 @@ function executeFallbackQuery(store, sql, params = []) {
       stop_events: 'id',
       wrong_stop_detections: 'id',
       stop_detection_alerts: 'id',
-      stop_performance_log: 'id'
+      stop_performance_log: 'id',
+      bus_gps_locations: 'id',
+      route_progress: 'id',
+      live_eta_cache: 'id',
+      route_performance_metrics: 'id'
     };
     const idKey = idKeyMap[tableName] || 'id';
 
