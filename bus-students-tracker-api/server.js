@@ -39,6 +39,7 @@ const boardingRoutes = require('./routes/boarding');
 const alertRoutes = require('./routes/alerts');
 const stopDetectionRoutes = require('./routes/stopDetection');
 const liveTransportRoutes = require('./routes/liveTransport');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 const server = http.createServer(app);
@@ -236,6 +237,8 @@ app.use('/api/stop-detection', stopDetectionRoutes);
 console.log('[SERVER] ✅ Wrong stop detection & alerts routes registered');
 app.use('/api/live', liveTransportRoutes);
 console.log('[SERVER] ✅ Live transport monitoring & GPS tracking routes registered');
+app.use('/api/notifications', notificationRoutes);
+console.log('[SERVER] ✅ Notifications & alerts multi-channel delivery routes registered');
 
 // 404 for undefined routes
 app.use((req, res) => {

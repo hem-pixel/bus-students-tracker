@@ -37,6 +37,10 @@ import WrongStopDetectionDashboard from './pages/admin/WrongStopDetectionDashboa
 import LiveMapDashboard from './pages/admin/LiveMapDashboard';
 import RouteProgressDashboard from './pages/admin/RouteProgressDashboard';
 import LiveAnalyticsDashboard from './pages/admin/LiveAnalyticsDashboard';
+import NotificationCenter from './pages/admin/NotificationCenter';
+import NotificationPreferences from './pages/admin/NotificationPreferences';
+import AlertRulesManagement from './pages/admin/AlertRulesManagement';
+import NotificationHistory from './pages/admin/NotificationHistory';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('opening');
@@ -289,6 +293,54 @@ function AppContent() {
             onNavigate={setCurrentPage}
           >
             <LiveAnalyticsDashboard onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'notification-center':
+      case 'admin/notification-center':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <NotificationCenter onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'alert-rules':
+      case 'admin/alert-rules':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <AlertRulesManagement onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'notification-preferences':
+      case 'admin/notification-preferences':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <NotificationPreferences onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'notification-history':
+      case 'admin/notification-history':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <NotificationHistory onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 

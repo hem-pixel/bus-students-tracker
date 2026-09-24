@@ -2179,6 +2179,282 @@ function initFallbackStore() {
         total_distance_km: 26.8,
         created_at: new Date().toISOString()
       }
+    ],
+    // ==========================================
+    // PHASE 12: Notifications & Alerts System
+    // ==========================================
+    notifications: [
+      {
+        id: 1,
+        notification_type: 'EMERGENCY_SOS',
+        event_id: 'evt-sos-001',
+        event_type: 'EMERGENCY_SOS',
+        title: '🚨 SOS Alert: Bus 12',
+        message: 'Emergency SOS button triggered on Bus 12 (Route 3 - Karur to VSB Campus) near NH-47.',
+        priority: 'CRITICAL',
+        status: 'SENT',
+        created_at: new Date(Date.now() - 15 * 60000).toISOString(),
+        updated_at: new Date(Date.now() - 15 * 60000).toISOString()
+      },
+      {
+        id: 2,
+        notification_type: 'GEOFENCE_EXIT',
+        event_id: 'evt-geo-002',
+        event_type: 'GEOFENCE_EXIT',
+        title: 'Route Deviation Alert',
+        message: 'Bus 08 has deviated from prescribed Route 5 geofence zone by 620 meters.',
+        priority: 'HIGH',
+        status: 'DELIVERED',
+        created_at: new Date(Date.now() - 45 * 60000).toISOString(),
+        updated_at: new Date(Date.now() - 45 * 60000).toISOString()
+      },
+      {
+        id: 3,
+        notification_type: 'BOARDING',
+        event_id: 'evt-brd-003',
+        event_type: 'BOARDING',
+        title: 'Student Boarding Verified',
+        message: 'Student Rajesh Kumar (CS023) has safely boarded Bus 12 at Stop 4 (Gandhigramam).',
+        priority: 'LOW',
+        status: 'READ',
+        created_at: new Date(Date.now() - 120 * 60000).toISOString(),
+        updated_at: new Date(Date.now() - 110 * 60000).toISOString()
+      },
+      {
+        id: 4,
+        notification_type: 'ETA_DELAY',
+        event_id: 'evt-dly-004',
+        event_type: 'ETA_DELAY',
+        title: 'Traffic Delay Notification',
+        message: 'Bus 04 on Route 2 is delayed by ~15 mins due to road construction on Karur Main Road.',
+        priority: 'MEDIUM',
+        status: 'DELIVERED',
+        created_at: new Date(Date.now() - 180 * 60000).toISOString(),
+        updated_at: new Date(Date.now() - 180 * 60000).toISOString()
+      }
+    ],
+    notification_recipients: [
+      {
+        id: 1,
+        notification_id: '1',
+        recipient_id: 'u1000000-0000-0000-0000-000000000001',
+        recipient_role: 'ADMIN',
+        email: 'transport.admin@vsb.ac.in',
+        phone: '+919876543210',
+        channels: { email: true, sms: true, push: true, in_app: true },
+        sent_at: new Date(Date.now() - 14 * 60000).toISOString(),
+        delivery_status: 'DELIVERED',
+        read_at: null,
+        created_at: new Date(Date.now() - 15 * 60000).toISOString()
+      },
+      {
+        id: 2,
+        notification_id: '2',
+        recipient_id: 'u1000000-0000-0000-0000-000000000002',
+        recipient_role: 'STAFF',
+        email: 'driver.ramesh@vsb.ac.in',
+        phone: '+919876543211',
+        channels: { email: true, sms: false, push: true, in_app: true },
+        sent_at: new Date(Date.now() - 44 * 60000).toISOString(),
+        delivery_status: 'DELIVERED',
+        read_at: null,
+        created_at: new Date(Date.now() - 45 * 60000).toISOString()
+      },
+      {
+        id: 3,
+        notification_id: '3',
+        recipient_id: 'p1000000-0000-0000-0000-000000000001',
+        recipient_role: 'PARENT',
+        email: 'parent.kumar@gmail.com',
+        phone: '+919842100001',
+        channels: { email: false, sms: true, push: true, in_app: true },
+        sent_at: new Date(Date.now() - 119 * 60000).toISOString(),
+        delivery_status: 'DELIVERED',
+        read_at: new Date(Date.now() - 110 * 60000).toISOString(),
+        created_at: new Date(Date.now() - 120 * 60000).toISOString()
+      },
+      {
+        id: 4,
+        notification_id: '4',
+        recipient_id: 'u1000000-0000-0000-0000-000000000001',
+        recipient_role: 'ADMIN',
+        email: 'transport.admin@vsb.ac.in',
+        phone: '+919876543210',
+        channels: { email: true, sms: false, push: true, in_app: true },
+        sent_at: new Date(Date.now() - 179 * 60000).toISOString(),
+        delivery_status: 'DELIVERED',
+        read_at: null,
+        created_at: new Date(Date.now() - 180 * 60000).toISOString()
+      }
+    ],
+    notification_preferences: [
+      {
+        id: 1,
+        user_id: 'u1000000-0000-0000-0000-000000000001',
+        email_enabled: true,
+        sms_enabled: true,
+        push_enabled: true,
+        in_app_enabled: true,
+        quiet_hours_enabled: false,
+        quiet_hours_start: '22:00',
+        quiet_hours_end: '06:00',
+        categories: { EMERGENCY_SOS: true, GEOFENCE_EXIT: true, BOARDING: true, ETA_DELAY: true, SPEED_VIOLATION: true, SYSTEM_ANNOUNCEMENT: true },
+        digest_mode: 'NONE',
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        user_id: 'p1000000-0000-0000-0000-000000000001',
+        email_enabled: true,
+        sms_enabled: true,
+        push_enabled: true,
+        in_app_enabled: true,
+        quiet_hours_enabled: true,
+        quiet_hours_start: '21:30',
+        quiet_hours_end: '06:00',
+        categories: { EMERGENCY_SOS: true, GEOFENCE_EXIT: true, BOARDING: true, ETA_DELAY: true, SPEED_VIOLATION: false, SYSTEM_ANNOUNCEMENT: true },
+        digest_mode: 'DAILY',
+        updated_at: new Date().toISOString()
+      }
+    ],
+    notification_templates: [
+      {
+        id: 1,
+        template_code: 'EMERGENCY_SOS',
+        template_name: 'Emergency SOS Broadcast',
+        category: 'SAFETY',
+        channels: ['email', 'sms', 'push', 'in_app'],
+        subject_template: '🚨 URGENT: SOS Alert on Bus {{bus_number}}',
+        body_template: 'EMERGENCY ALERT: Bus {{bus_number}} (Route {{route_name}}) triggered an SOS alert at {{timestamp}} near {{location}}. Coordinates: {{latitude}}, {{longitude}}.',
+        variables: ['bus_number', 'route_name', 'timestamp', 'location', 'latitude', 'longitude'],
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        template_code: 'GEOFENCE_EXIT',
+        template_name: 'Geofence Deviation Alert',
+        category: 'SECURITY',
+        channels: ['email', 'push', 'in_app'],
+        subject_template: '⚠️ Route Deviation: Bus {{bus_number}} Exited Corridor',
+        body_template: 'Alert: Bus {{bus_number}} has crossed the assigned corridor boundary for Route {{route_name}} at {{timestamp}}. Current speed: {{speed}} km/h.',
+        variables: ['bus_number', 'route_name', 'timestamp', 'speed'],
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 3,
+        template_code: 'BOARDING_CONFIRMATION',
+        template_name: 'Student Boarding / De-boarding Confirmation',
+        category: 'OPERATIONS',
+        channels: ['sms', 'push', 'in_app'],
+        subject_template: 'Student Boarding Update - {{student_name}}',
+        body_template: 'Hello {{parent_name}}, your ward {{student_name}} (Roll: {{roll_number}}) has successfully boarded Bus {{bus_number}} at {{stop_name}} at {{timestamp}}.',
+        variables: ['parent_name', 'student_name', 'roll_number', 'bus_number', 'stop_name', 'timestamp'],
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 4,
+        template_code: 'ETA_DELAY',
+        template_name: 'Bus ETA Delay Notification',
+        category: 'TRANSIT',
+        channels: ['email', 'sms', 'push', 'in_app'],
+        subject_template: 'Delay Advisory: Bus {{bus_number}} delayed by {{delay_minutes}} mins',
+        body_template: 'Please note that Bus {{bus_number}} on Route {{route_name}} is experiencing a delay of approximately {{delay_minutes}} minutes due to {{reason}}. Revised ETA for {{stop_name}}: {{new_eta}}.',
+        variables: ['bus_number', 'route_name', 'delay_minutes', 'reason', 'stop_name', 'new_eta'],
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ],
+    alert_rules: [
+      {
+        id: 1,
+        rule_name: 'Emergency SOS Auto-Dispatch',
+        event_type: 'EMERGENCY_SOS',
+        condition_json: { trigger: 'SOS_BUTTON' },
+        actions: { email: true, sms: true, push: true, in_app: true },
+        recipients_query: 'ALL_INVOLVED',
+        priority: 'CRITICAL',
+        enabled: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        rule_name: 'Geofence Breach Rapid Alert',
+        event_type: 'GEOFENCE_EXIT',
+        condition_json: { deviation_meters: { gte: 500 } },
+        actions: { email: true, sms: false, push: true, in_app: true },
+        recipients_query: 'STAFF_AND_ADMIN',
+        priority: 'HIGH',
+        enabled: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 3,
+        rule_name: 'Significant ETA Delay Alert',
+        event_type: 'ETA_DELAY',
+        condition_json: { delay_minutes: { gte: 10 } },
+        actions: { email: true, sms: true, push: true, in_app: true },
+        recipients_query: 'PARENTS_ONLY',
+        priority: 'MEDIUM',
+        enabled: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 4,
+        rule_name: 'Student Biometric Boarding Confirmation',
+        event_type: 'BOARDING',
+        condition_json: { status: 'VERIFIED' },
+        actions: { email: false, sms: true, push: true, in_app: true },
+        recipients_query: 'PARENTS_ONLY',
+        priority: 'LOW',
+        enabled: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ],
+    notification_audit_log: [
+      {
+        id: 1,
+        notification_id: '1',
+        channel: 'in_app',
+        recipient_identifier: 'transport.admin@vsb.ac.in',
+        status: 'DELIVERED',
+        provider_response: { status: 'broadcasted', socket_connected: true },
+        error_message: null,
+        attempts: 1,
+        created_at: new Date(Date.now() - 14 * 60000).toISOString()
+      },
+      {
+        id: 2,
+        notification_id: '1',
+        channel: 'email',
+        recipient_identifier: 'transport.admin@vsb.ac.in',
+        status: 'DELIVERED',
+        provider_response: { simulated: true, messageId: 'sim-email-001' },
+        error_message: null,
+        attempts: 1,
+        created_at: new Date(Date.now() - 14 * 60000).toISOString()
+      },
+      {
+        id: 3,
+        notification_id: '3',
+        channel: 'sms',
+        recipient_identifier: '+919842100001',
+        status: 'DELIVERED',
+        provider_response: { simulated: true, sid: 'SM_simulated_001' },
+        error_message: null,
+        attempts: 1,
+        created_at: new Date(Date.now() - 119 * 60000).toISOString()
+      }
     ]
   };
 
@@ -2986,7 +3262,13 @@ function executeFallbackQuery(store, sql, params = []) {
       bus_gps_locations: 'id',
       route_progress: 'id',
       live_eta_cache: 'id',
-      route_performance_metrics: 'id'
+      route_performance_metrics: 'id',
+      notifications: 'id',
+      notification_recipients: 'id',
+      notification_preferences: 'id',
+      notification_templates: 'id',
+      alert_rules: 'id',
+      notification_audit_log: 'id'
     };
     const idKey = idKeyMap[tableName] || 'id';
 

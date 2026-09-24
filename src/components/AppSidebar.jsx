@@ -21,7 +21,11 @@ import {
   MapPin,
   ShieldAlert,
   Route,
-  TrendingUp
+  TrendingUp,
+  Bell,
+  SlidersHorizontal,
+  Sliders,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -168,6 +172,44 @@ export default function AppSidebar({
           icon: ShieldAlert,
           roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE'],
           badge: 'LIVE'
+        }
+      ]
+    },
+    {
+      groupTitle: 'NOTIFICATIONS & ALERTS',
+      items: [
+        {
+          id: 'notification-center',
+          aliases: ['admin/notification-center'],
+          label: 'Notification Center',
+          shortLabel: 'NOTIFICATIONS',
+          icon: Bell,
+          roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE'],
+          badge: 'LIVE'
+        },
+        {
+          id: 'alert-rules',
+          aliases: ['admin/alert-rules'],
+          label: 'Alert Rules',
+          shortLabel: 'RULES',
+          icon: SlidersHorizontal,
+          roles: ['ADMIN', 'TRANSPORT_STAFF']
+        },
+        {
+          id: 'notification-preferences',
+          aliases: ['admin/notification-preferences'],
+          label: 'Delivery Prefs',
+          shortLabel: 'PREFS',
+          icon: Sliders,
+          roles: ['ADMIN', 'TRANSPORT_STAFF']
+        },
+        {
+          id: 'notification-history',
+          aliases: ['admin/notification-history'],
+          label: 'Audit History',
+          shortLabel: 'HISTORY',
+          icon: Clock,
+          roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']
         }
       ]
     }

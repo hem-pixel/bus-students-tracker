@@ -411,6 +411,52 @@ export const apiService = {
     getPassengerFlow: (busId) => request(`/live/passenger-flow/${busId}`),
     simulateStep: (data) => request('/live/simulate/step', { method: 'POST', body: JSON.stringify(data) }),
     calculateDailyMetrics: (data) => request('/live/metrics/daily', { method: 'POST', body: JSON.stringify(data) })
+  },
+
+  // Notifications & Alerts System (Phase 12)
+  notifications: {
+    getStats: () => request('/notifications/stats'),
+    getAll: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/notifications${qs ? `?${qs}` : ''}`);
+    },
+    getById: (id) => request(`/notifications/${id}`),
+    send: (data) => request('/notifications/send', { method: 'POST', body: JSON.stringify(data) }),
+    sendBulk: (data) => request('/notifications/bulk', { method: 'POST', body: JSON.stringify(data) }),
+    acknowledge: (id, data = {}) => request(`/notifications/${id}/acknowledge`, { method: 'POST', body: JSON.stringify(data) }),
+    retry: (id) => request(`/notifications/${id}/retry`, { method: 'POST' }),
+    delete: (id) => request(`/notifications/${id}`, { method: 'DELETE' }),
+
+    // Preferences
+    getPreferences: (userId) => request(`/notifications/preferences/${userId}`),
+    updatePreferences: (userId, data) => request(`/notifications/preferences/${userId}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+    // Alert Rules
+    getAlertRules: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/notifications/rules${qs ? `?${qs}` : ''}`);
+    },
+    getAlertRuleById: (id) => request(`/notifications/rules/${id}`),
+    createAlertRule: (data) => request('/notifications/rules', { method: 'POST', body: JSON.stringify(data) }),
+    updateAlertRule: (id, data) => request(`/notifications/rules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteAlertRule: (id) => request(`/notifications/rules/${id}`, { method: 'DELETE' }),
+    testAlertRule: (data) => request('/notifications/rules/test', { method: 'POST', body: JSON.stringify(data) }),
+
+    // Templates
+    getTemplates: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/notifications/templates${qs ? `?${qs}` : ''}`);
+    },
+    getTemplateById: (id) => request(`/notifications/templates/${id}`),
+    createTemplate: (data) => request('/notifications/templates', { method: 'POST', body: JSON.stringify(data) }),
+    updateTemplate: (id, data) => request(`/notifications/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteTemplate: (id) => request(`/notifications/templates/${id}`, { method: 'DELETE' }),
+
+    // Audit History
+    getAuditHistory: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/notifications/history/audit${qs ? `?${qs}` : ''}`);
+    }
   }
 };
 
@@ -429,5 +475,7 @@ export const boardingAPI = apiService.boarding;
 export const alertsAPI = apiService.alerts;
 export const stopDetectionAPI = apiService.stopDetection;
 export const liveTransportAPI = apiService.liveTransport;
+export const notificationAPI = apiService.notifications;
+
 
 
