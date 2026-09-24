@@ -41,6 +41,7 @@ import NotificationCenter from './pages/admin/NotificationCenter';
 import NotificationPreferences from './pages/admin/NotificationPreferences';
 import AlertRulesManagement from './pages/admin/AlertRulesManagement';
 import NotificationHistory from './pages/admin/NotificationHistory';
+import MobileAppSimulator from './pages/admin/MobileAppSimulator';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('opening');
@@ -341,6 +342,19 @@ function AppContent() {
             onNavigate={setCurrentPage}
           >
             <NotificationHistory onNavigate={setCurrentPage} />
+          </ProtectedRoute>
+        );
+
+      case 'mobile-simulator':
+      case 'admin/mobile-simulator':
+      case 'mobile-app':
+        return (
+          <ProtectedRoute
+            allowedRoles={['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigate={setCurrentPage}
+          >
+            <MobileAppSimulator onNavigate={setCurrentPage} />
           </ProtectedRoute>
         );
 

@@ -1,0 +1,42 @@
+{
+  "name": "BusTracker",
+  "displayName": "VSB Bus Tracker",
+  "version": "1.0.0",
+  "expo": {
+    "name": "VSB Bus Tracker",
+    "slug": "bus-students-tracker-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#05070A"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vsb.bustracker",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Real-time bus tracking and stop arrival estimation.",
+        "NSFaceIDUsageDescription": "Biometric authentication for instant, secure access."
+      }
+    },
+    "android": {
+      "package": "com.vsb.bustracker",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
+    }
+  }
+}

@@ -25,7 +25,8 @@ import {
   Bell,
   SlidersHorizontal,
   Sliders,
-  Clock
+  Clock,
+  Smartphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -210,6 +211,20 @@ export default function AppSidebar({
           shortLabel: 'HISTORY',
           icon: Clock,
           roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE']
+        }
+      ]
+    },
+    {
+      groupTitle: 'MOBILE ECOSYSTEM',
+      items: [
+        {
+          id: 'mobile-simulator',
+          aliases: ['admin/mobile-simulator', 'mobile-app'],
+          label: 'Mobile App Suite',
+          shortLabel: 'MOBILE APP',
+          icon: Smartphone,
+          roles: ['ADMIN', 'TRANSPORT_STAFF', 'BUS_IN_CHARGE'],
+          badge: 'PHASE 13'
         }
       ]
     }
